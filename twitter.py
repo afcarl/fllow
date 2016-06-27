@@ -1,20 +1,29 @@
-import logging
-
 import requests
 import requests_oauthlib
 
+import secret
 
-logging.basicConfig(level=logging.DEBUG)
+
+CONSUMER_KEY = '9QswJgHJg1w1IzyVklleqS9Wb'
 
 session = requests.Session()
-session.auth = requests_oauthlib.OAuth1(
-    client_key='9QswJgHJg1w1IzyVklleqS9Wb',
-    client_secret=input('application secret: '),
-    resource_owner_key='22175229-iHYC3pAem4YT7Pg8IQpDwdwpSu0B35e9ajQ8G77LB',
-    resource_owner_secret=input('user secret: ')
-)
 
-def get(path, **params):
-    return session.get('https://api.twitter.com/1.1/' + path + '.json', params=params).json()
+def get_request_token():
+    return (requests_oauthlib.OAuth1Session(CONSUMER_KEY, secret.CONSUMER_SECRET)
+            .fetch_request_token('https://api.twitter.com/oauth/request_token',
+                                 params=dict(oauth_callback='oob')))
 
-print(get('followers/ids', screen_name='hrldcpr'))
+def get_authorize_url(request_token):
+    return 'https://api.twitter.com/oauth/authorize?oauth_token=' + request_token
+
+def get_access_token(request_token, request_token_secret, pin):
+    return (requests_oauthlib.OAuth1Session(CONSUMER_KEY, secret.CONSUMER_SECRET,
+                                            request_token, request_token_secret,
+                                            verifier=pin)
+            .fetch_access_token('https://api.twitter.com/oauth/access_token'))
+
+def get(user, path, **params):
+    return session.get('https://api.twitter.com/1.1/' + path + '.json', params=params,
+                       auth=requests_oauthlib.OAuth1(CONSUMER_KEY, secret.CONSUMER_SECRET,
+                                                     user.access_token, user.access_token_secret)
+    ).json()
