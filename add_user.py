@@ -16,13 +16,8 @@ def main():
     user = User(access_token['oauth_token'], access_token['oauth_token_secret'])
     user_data = twitter.get(user, 'account/verify_credentials')
 
-    db = database.connect()
-    with db, db.cursor() as cursor:
-        cursor.execute(
-            'insert into twitters (twitter_id, screen_name) values (%(id)s, %(screen_name)s)'
-            ' on conflict (twitter_id) do update set screen_name=excluded.screen_name,'
-            ' updated_time=now() returning id', user_data)
-        twitter_id = cursor.fetchone().id
+    with database.connect() as db, db.cursor() as cursor:
+        twitter_id, = database.upsert_twitters(cursor, [user_data])
         cursor.execute(
             'insert into users (twitter_id, access_token, access_token_secret) values (%s, %s, %s)'
             ' on conflict (twitter_id) do update set access_token=excluded.access_token,'
