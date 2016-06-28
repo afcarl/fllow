@@ -18,12 +18,7 @@ def main():
 
     with database.connect() as db, db.cursor() as cursor:
         twitter_id, = database.upsert_twitters(cursor, [user_data])
-        cursor.execute(
-            'insert into users (twitter_id, access_token, access_token_secret) values (%s, %s, %s)'
-            ' on conflict (twitter_id) do update set access_token=excluded.access_token,'
-            ' access_token_secret=excluded.access_token_secret, updated_time=now()',
-            (twitter_id, user.access_token, user.access_token_secret))
-
+        database.upsert_user(cursor, twitter_id, user.access_token, user.access_token_secret)
 
 if __name__ == '__main__':
     main()
