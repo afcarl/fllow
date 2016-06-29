@@ -1,8 +1,8 @@
 import logging
 import sys
 
+import api
 import database
-import twitter
 
 
 def main(user, mentors):
@@ -11,7 +11,7 @@ def main(user, mentors):
     with db, db.cursor() as cursor:
         user = database.get_user(cursor, user)
 
-    mentor_data = twitter.get(user, 'users/lookup', screen_name=','.join(mentors))
+    mentor_data = api.get(user, 'users/lookup', screen_name=','.join(mentors))
     unknown = mentors - {m['screen_name'] for m in mentor_data}
     if unknown: logging.warn('unknown screen names: %s', unknown)
 
