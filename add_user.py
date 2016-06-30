@@ -1,4 +1,5 @@
 import collections
+import logging
 
 import api
 import database
@@ -15,6 +16,7 @@ def main():
                                         request_token['oauth_token_secret'], pin)
     user = User(access_token['oauth_token'], access_token['oauth_token_secret'])
     user_data = api.get(user, 'account/verify_credentials')
+    logging.info('adding user %s', user_data['screen_name'])
 
     with database.connect() as db, db.cursor() as cursor:
         twitter_id, = database.update_twitters(cursor, [user_data])
@@ -22,4 +24,5 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     main()
