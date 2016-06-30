@@ -12,7 +12,7 @@ def main(user, mentors):
         user = database.get_user(cursor, user)
 
     mentor_data = api.get(user, 'users/lookup', screen_name=','.join(mentors))
-    unknown = mentors - {m['screen_name'] for m in mentor_data}
+    unknown = {m.lower() for m in mentors} - {m['screen_name'].lower() for m in mentor_data}
     if unknown: logging.warning('unknown screen names: %s', unknown)
 
     with db, db.cursor() as cursor:
@@ -21,4 +21,4 @@ def main(user, mentors):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], set(sys.argv[2:]))
+    main(sys.argv[1], sys.argv[2:])
