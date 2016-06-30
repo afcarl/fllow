@@ -23,7 +23,13 @@ def get_access_token(request_token, request_token_secret, pin):
             .fetch_access_token('https://api.twitter.com/oauth/access_token'))
 
 def get(user, path, **params):
-    return session.get('https://api.twitter.com/1.1/' + path + '.json', params=params,
-                       auth=requests_oauthlib.OAuth1(CONSUMER_KEY, secret.CONSUMER_SECRET,
-                                                     user.access_token, user.access_token_secret)
-    ).json()
+    return request('GET', user, path, **params)
+
+def post(user, path, **params):
+    return request('POST', user, path, **params)
+
+def request(method, user, path, **params):
+    return session.request(method, 'https://api.twitter.com/1.1/' + path + '.json', params=params,
+                           auth=requests_oauthlib.OAuth1(CONSUMER_KEY, secret.CONSUMER_SECRET,
+                                                         user.access_token,
+                                                         user.access_token_secret)).json()
