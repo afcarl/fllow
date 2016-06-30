@@ -13,11 +13,11 @@ def main(user, mentors):
 
     mentor_data = api.get(user, 'users/lookup', screen_name=','.join(mentors))
     unknown = mentors - {m['screen_name'] for m in mentor_data}
-    if unknown: logging.warn('unknown screen names: %s', unknown)
+    if unknown: logging.warning('unknown screen names: %s', unknown)
 
-    with database.connect() as db, db.cursor() as cursor:
-        mentor_ids = database.upsert_twitters(cursor, mentor_data)
-        database.insert_user_mentors(cursor, user.id, mentor_ids)
+    with db, db.cursor() as cursor:
+        mentor_ids = database.update_twitters(cursor, mentor_data)
+        database.add_user_mentors(cursor, user.id, mentor_ids)
 
 
 if __name__ == '__main__':

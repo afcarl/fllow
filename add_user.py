@@ -17,8 +17,9 @@ def main():
     user_data = api.get(user, 'account/verify_credentials')
 
     with database.connect() as db, db.cursor() as cursor:
-        twitter_id, = database.upsert_twitters(cursor, [user_data])
-        database.upsert_user(cursor, twitter_id, user.access_token, user.access_token_secret)
+        twitter_id, = database.update_twitters(cursor, [user_data])
+        database.update_user(cursor, twitter_id, user.access_token, user.access_token_secret)
+
 
 if __name__ == '__main__':
     main()
