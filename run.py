@@ -20,6 +20,7 @@ def now():
 
 
 def update_followers(db, user, twitter_id):
+    # only update followers if they haven't been updated recently:
     with db, db.cursor() as cursor:
         twitter = database.get_twitter(cursor, twitter_id)
         updated_time = database.get_twitter_followers_updated_time(cursor, twitter_id) or MIN_TIME
@@ -42,16 +43,20 @@ def update_followers(db, user, twitter_id):
 
 
 def follow(db, user, twitter_id):
-    logging.info('preparing user %s to follow twitter_id=%d', user, twitter_id)
+    # only follow someone if this user hasn't already followed them,
+    # and hasn't followed anyone too recently,
+    # and hasn't followed too many people recently:
     with db, db.cursor() as cursor:
+        twitter = database.get_twitter(cursor, twitter_id)
+        already_followed = database.get_user_follow(cursor, user.id, twitter.id)
         followed_time = database.get_user_followed_time(cursor, user.id) or MIN_TIME
         follows_count = database.get_user_follows_count(cursor, user.id, now() - DAY)
-        twitter = database.get_twitter(cursor, twitter_id)
     logging.info('user %s last followed at %s and has %d follows in the last day', user, followed_time, follows_count)
-    if now() - followed_time < FOLLOW_PERIOD: raise Exception('user followed too recently')
-    if follows_count >= FOLLOWS_PER_DAY: raise Exception('user exceeded follows for the day')
+    if already_followed: return logging.warning('user has already followed %s', twitter)
+    if now() - followed_time < FOLLOW_PERIOD: return logging.warning('user has followed too recently')
+    if follows_count >= FOLLOWS_PER_DAY: return logging.warning('user exceeded follows for the day')
 
-    logging.info(api.post(user, 'friendships/create', user_id=twitter.api_id))
+    api.post(user, 'friendships/create', user_id=twitter.api_id)
     with db, db.cursor() as cursor:
         database.add_user_follow(cursor, user.id, twitter.id)
 

@@ -100,6 +100,11 @@ def get_user_followed_time(cursor, user_id):
     cursor.execute('select max(followed_time) from user_follows where user_id=%s', (user_id,))
     return cursor.fetchone().max
 
+def get_user_follow(cursor, user_id, followed_id):
+    cursor.execute('select followed_time, unfollowed_time from user_follows'
+                   ' where user_id=%s and followed_id=%s', (user_id, followed_id))
+    return cursor.fetchone()
+
 def add_user_follow(cursor, user_id, followed_id):
     cursor.execute('insert into user_follows (user_id, followed_id) values (%s, %s)',
                    (user_id, followed_id))
