@@ -7,6 +7,8 @@ def connect():
                             cursor_factory=psycopg2.extras.NamedTupleCursor)
 
 
+## twitters ##
+
 def get_twitter(cursor, twitter_id):
     cursor.execute('select id, api_id, screen_name from twitters where id=%s', (twitter_id,))
     return cursor.fetchone()
@@ -27,6 +29,8 @@ def add_twitter_api_ids(cursor, api_ids):
     return [row.id for row in cursor.fetchall()]
 
 
+## twitter_followers ##
+
 def get_twitter_follower_ids(cursor, twitter_id):
     cursor.execute('select follower_id from twitter_followers where twitter_id=%s', (twitter_id,))
     return [row.follower_id for row in cursor.fetchall()]
@@ -34,8 +38,7 @@ def get_twitter_follower_ids(cursor, twitter_id):
 def get_twitter_followers_updated_time(cursor, twitter_id):
     cursor.execute('select max(updated_time) from twitter_followers where twitter_id=%s',
                    (twitter_id,))
-    updated_time, = cursor.fetchone()
-    return updated_time
+    return cursor.fetchone().max
 
 def update_twitter_followers(cursor, twitter_id, follower_ids):
     cursor.execute('insert into twitter_followers (twitter_id, follower_id) values '
@@ -47,6 +50,8 @@ def delete_old_twitter_followers(cursor, twitter_id, before):
     cursor.execute('delete from twitter_followers where twitter_id=%s and updated_time < %s',
                    (twitter_id, before))
 
+
+## users ##
 
 def get_users(cursor):
     cursor.execute('select users.id, users.twitter_id, access_token, access_token_secret'
@@ -67,6 +72,8 @@ def update_user(cursor, twitter_id, access_token, access_token_secret):
                    (twitter_id, access_token, access_token_secret))
 
 
+## user_mentors ##
+
 def add_user_mentors(cursor, user_id, mentor_ids):
     cursor.execute('insert into user_mentors (user_id, mentor_id) values '
                    + ','.join('%s' for _ in mentor_ids) +
@@ -77,6 +84,8 @@ def get_user_mentor_ids(cursor, user_id):
     cursor.execute('select mentor_id from user_mentors where user_id=%s', (user_id,))
     return [row.mentor_id for row in cursor.fetchall()]
 
+
+## user_follows ##
 
 def get_user_followed_ids(cursor, user_id):
     cursor.execute('select followed_id from user_follows where user_id=%s', (user_id,))
@@ -89,8 +98,7 @@ def get_user_follows_count(cursor, user_id, since):
 
 def get_user_followed_time(cursor, user_id):
     cursor.execute('select max(followed_time) from user_follows where user_id=%s', (user_id,))
-    followed_time, = cursor.fetchone()
-    return followed_time
+    return cursor.fetchone().max
 
 def add_user_follow(cursor, user_id, followed_id):
     cursor.execute('insert into user_follows (user_id, followed_id) values (%s, %s)',
