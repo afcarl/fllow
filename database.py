@@ -47,7 +47,7 @@ def update_twitter_followers(cursor, twitter_id, follower_ids):
                    [(twitter_id, follower_id) for follower_id in follower_ids])
 
 def delete_old_twitter_followers(cursor, twitter_id, before):
-    cursor.execute('delete from twitter_followers where twitter_id=%s and updated_time < %s',
+    cursor.execute('delete from twitter_followers where twitter_id=%s and updated_time <= %s',
                    (twitter_id, before))
 
 
