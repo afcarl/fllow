@@ -9,7 +9,7 @@ import database
 
 UPDATE_PERIOD = datetime.timedelta(days=1)
 UNFOLLOW_PERIOD = datetime.timedelta(days=3)
-FOLLOW_PERIOD = datetime.timedelta(seconds=10)
+FOLLOW_PERIOD = datetime.timedelta(seconds=5)
 DAY = datetime.timedelta(days=1)
 FOLLOWS_PER_DAY = 100
 
