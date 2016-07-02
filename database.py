@@ -36,9 +36,20 @@ def get_twitter_follower_ids(cursor, twitter_id):
     return [row.follower_id for row in cursor.fetchall()]
 
 def get_twitter_followers_updated_time(cursor, twitter_id):
+    cursor.execute('select min(updated_time) from twitter_followers where twitter_id=%s',
+                   (twitter_id,))
+    return cursor.fetchone().min
+
+def get_twitter_followers_last_updated_time(cursor, twitter_id):
     cursor.execute('select max(updated_time) from twitter_followers where twitter_id=%s',
                    (twitter_id,))
     return cursor.fetchone().max
+
+def get_twitter_follower_updated_time(cursor, twitter_id, follower_id):
+    cursor.execute('select updated_time from twitter_followers'
+                   ' where twitter_id=%s and follower_id=%s', (twitter_id, follower_id))
+    row = cursor.fetchone()
+    if row: return row.updated_time
 
 def update_twitter_followers(cursor, twitter_id, follower_ids):
     cursor.execute('insert into twitter_followers (twitter_id, follower_id) values '
@@ -87,16 +98,22 @@ def get_user_mentor_ids(cursor, user_id):
 
 ## user_follows ##
 
-def get_user_followed_ids(cursor, user_id):
-    cursor.execute('select followed_id from user_follows where user_id=%s', (user_id,))
-    return [row.follower_id for row in cursor.fetchall()]
+def get_user_followed_ids(cursor, user_id, before=None, exclude_unfollowed=False):
+    sql = 'select followed_id from user_follows where user_id=%s'
+    values = [user_id]
+    if before:
+        sql += ' and followed_time < %s'
+        values += [before]
+    if exclude_unfollowed: sql += ' and unfollowed_time is null'
+    cursor.execute(sql, values)
+    return [row.followed_id for row in cursor.fetchall()]
 
 def get_user_follows_count(cursor, user_id, since):
     cursor.execute('select count(*) from user_follows where user_id=%s and followed_time > %s',
                    (user_id, since))
     return cursor.fetchone().count
 
-def get_user_followed_time(cursor, user_id):
+def get_user_last_followed_time(cursor, user_id):
     cursor.execute('select max(followed_time) from user_follows where user_id=%s', (user_id,))
     return cursor.fetchone().max
 
@@ -108,3 +125,7 @@ def get_user_follow(cursor, user_id, followed_id):
 def add_user_follow(cursor, user_id, followed_id):
     cursor.execute('insert into user_follows (user_id, followed_id) values (%s, %s)',
                    (user_id, followed_id))
+
+def set_user_unfollowed(cursor, user_id, followed_id):
+    cursor.execute('update user_follows set unfollowed_time=now()'
+                   ' where user_id=%s and followed_id=%s', (user_id, followed_id))

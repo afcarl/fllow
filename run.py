@@ -7,11 +7,10 @@ import api
 import database
 
 
-MIN_TIME = datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
-DAY = datetime.timedelta(days=1)
-UPDATE_PERIOD = datetime.timedelta(days=7)
-UNFOLLOW_PERIOD = datetime.timedelta(days=7)
+UPDATE_PERIOD = datetime.timedelta(days=1)
+UNFOLLOW_PERIOD = datetime.timedelta(days=3)
 FOLLOW_PERIOD = datetime.timedelta(seconds=10)
+DAY = datetime.timedelta(days=1)
 FOLLOWS_PER_DAY = 100
 
 
@@ -23,13 +22,13 @@ def update_followers(db, user, twitter_id):
     # only update followers if they haven't been updated recently:
     with db, db.cursor() as cursor:
         twitter = database.get_twitter(cursor, twitter_id)
-        updated_time = database.get_twitter_followers_updated_time(cursor, twitter_id) or MIN_TIME
-    logging.info('followers for %s last updated at %s', twitter, updated_time)
-    if now() - updated_time < UPDATE_PERIOD: return
+        last_updated_time = database.get_twitter_followers_last_updated_time(cursor, twitter_id)
+    logging.info('maybe updating followers for %s last updated at %s', twitter, last_updated_time)
+    if last_updated_time and now() - last_updated_time < UPDATE_PERIOD: return logging.info('updated too recently')
 
     api_cursor = -1  # cursor=-1 requests first page
     while api_cursor:  # cursor=0 means no more pages
-        logging.info('getting followers for %s at cursor=%s', twitter, api_cursor)
+        logging.info('getting cursor=%s', api_cursor)
         data = api.get(user, 'followers/ids', user_id=twitter.api_id, cursor=api_cursor)
         api_cursor = data['next_cursor']
         logging.info('got %d followers, next_cursor=%s', len(data['ids']), api_cursor)
@@ -38,8 +37,26 @@ def update_followers(db, user, twitter_id):
             twitter_ids = database.add_twitter_api_ids(cursor, data['ids'])
             database.update_twitter_followers(cursor, twitter.id, twitter_ids)
 
-    with db, db.cursor() as cursor:  # delete followers who weren't seen again
-        database.delete_old_twitter_followers(cursor, twitter.id, updated_time)
+    if last_updated_time:  # delete followers who weren't seen again
+        with db, db.cursor() as cursor:
+            database.delete_old_twitter_followers(cursor, twitter.id, last_updated_time)
+
+
+def unfollow(db, user, twitter_id):
+    # only unfollow someone if this user followed them,
+    # and they've had some time to follow them back but didn't:
+    with db, db.cursor() as cursor:
+        twitter = database.get_twitter(cursor, twitter_id)
+        user_follow = database.get_user_follow(cursor, user.id, twitter.id)
+        updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
+    logging.info('%s unfollowing %s followed at %s updated at %s', user, twitter, user_follow.followed_time, updated_time)
+    if not user_follow: return logging.warning('but they were never followed')
+    if user_follow.unfollowed_time: return logging.warning('but they were already unfollowed at %s', user_follow.unfollowed_time)
+    if not (updated_time and updated_time - user_follow.followed_time > UNFOLLOW_PERIOD): return logging.warning('but they were followed too recently')
+
+    api.post(user, 'friendships/destroy', user_id=twitter.api_id)
+    with db, db.cursor() as cursor:
+        database.set_user_unfollowed(cursor, user.id, twitter.id)
 
 
 def follow(db, user, twitter_id):
@@ -48,13 +65,13 @@ def follow(db, user, twitter_id):
     # and hasn't followed too many people recently:
     with db, db.cursor() as cursor:
         twitter = database.get_twitter(cursor, twitter_id)
-        already_followed = database.get_user_follow(cursor, user.id, twitter.id)
-        followed_time = database.get_user_followed_time(cursor, user.id) or MIN_TIME
+        user_follow = database.get_user_follow(cursor, user.id, twitter.id)
+        last_followed_time = database.get_user_last_followed_time(cursor, user.id)
         follows_count = database.get_user_follows_count(cursor, user.id, now() - DAY)
-    logging.info('user %s last followed at %s and has %d follows in the last day', user, followed_time, follows_count)
-    if already_followed: return logging.warning('user has already followed %s', twitter)
-    if now() - followed_time < FOLLOW_PERIOD: return logging.warning('user has followed too recently')
-    if follows_count >= FOLLOWS_PER_DAY: return logging.warning('user exceeded follows for the day')
+    logging.info('%s following %s last followed at %s and %d follows today', user, twitter, last_followed_time, follows_count)
+    if user_follow: return logging.warning('but already followed at %s', user_follow.followed_time)
+    if last_followed_time and now() - last_followed_time < FOLLOW_PERIOD: return logging.warning('but followed too recently')
+    if follows_count >= FOLLOWS_PER_DAY: return logging.warning('but too many follows today')
 
     api.post(user, 'friendships/create', user_id=twitter.api_id)
     with db, db.cursor() as cursor:
@@ -62,14 +79,25 @@ def follow(db, user, twitter_id):
 
 
 def run(db, user):
-    logging.info('processing user %s', user)
-
     update_followers(db, user, user.twitter_id)
 
     with db, db.cursor() as cursor:
         mentor_ids = database.get_user_mentor_ids(cursor, user.id)
     for mentor_id in mentor_ids:
         update_followers(db, user, mentor_id)
+
+    with db, db.cursor() as cursor:
+        updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
+        before = updated_time - UNFOLLOW_PERIOD
+        followed_ids = set(database.get_user_followed_ids(cursor, user.id, before=before,
+                                                          exclude_unfollowed=True))
+        follower_ids = set(database.get_twitter_follower_ids(cursor, user.twitter_id))
+    logging.info('%s followers updated at %s', user, updated_time)
+    logging.info('%d followed before %s', len(followed_ids), before)
+    followed_ids -= follower_ids  # don't unfollow people who followed back
+    logging.info('%d have not followed back', len(followed_ids))
+    for followed_id in followed_ids:
+        unfollow(db, user, followed_id)
 
     with db, db.cursor() as cursor:
         followed_ids = set(database.get_user_followed_ids(cursor, user.id))
