@@ -59,8 +59,8 @@ def get_users(cursor):
     return cursor.fetchall()
 
 def get_user(cursor, screen_name):
-    cursor.execute('select users.id, users.twitter_id, access_token, access_token_secret'
-                   ' from users, twitters where users.twitter_id=twitters.id and screen_name=%s',
+    cursor.execute('select users.id, twitter_id, access_token, access_token_secret'
+                   ' from users, twitters where twitter_id=twitters.id and screen_name=%s',
                    (screen_name,))
     return cursor.fetchone()
 
