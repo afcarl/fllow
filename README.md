@@ -21,4 +21,4 @@
 
 ### While you're developing
 
-    docker run --rm --net fllowers -v $PWD:/opt -it fllowers python3 <something>.py
+    docker run --rm --net fllowers [-v $PWD:/usr/src/app] -it fllowers python <something>.py
