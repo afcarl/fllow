@@ -1,9 +1,15 @@
+import os
+
 import psycopg2
 import psycopg2.extras
 
+DB_HOST = os.environ.get('DB_HOST', 'db')
+DB_USER = os.environ.get('DB_USER', 'postgres')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
+
 
 def connect():
-    return psycopg2.connect(host='db', user='postgres',
+    return psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD,
                             cursor_factory=psycopg2.extras.NamedTupleCursor)
 
 
