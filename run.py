@@ -12,11 +12,11 @@ import api
 import database
 
 
-UPDATE_PERIOD = datetime.timedelta(days=1)
-UNFOLLOW_PERIOD = datetime.timedelta(days=3)
-FOLLOW_PERIOD = datetime.timedelta(seconds=5)
-DAY = datetime.timedelta(days=1)
 FOLLOWS_PER_DAY = 100
+DAY = datetime.timedelta(days=1)
+FOLLOW_PERIOD = datetime.timedelta(seconds=5)
+UPDATE_PERIOD = 1 * DAY
+UNFOLLOW_PERIOD = 4 * DAY
 
 
 def now():
