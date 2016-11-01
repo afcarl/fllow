@@ -1,7 +1,12 @@
+from gevent import monkey
+monkey.patch_all()
+
 import datetime
 import logging
 import random
 import time
+
+import gevent
 
 import api
 import database
@@ -76,6 +81,7 @@ def follow(db, user, twitter_id):
     api.post(user, 'friendships/create', user_id=twitter.api_id)
     with db, db.cursor() as cursor:
         database.add_user_follow(cursor, user.id, twitter.id)
+    return True
 
 
 def run(db, user):
@@ -106,7 +112,7 @@ def run(db, user):
                       if id not in followed_ids]
     random.shuffle(follow_ids)
     for follow_id in follow_ids:
-        follow(db, user, follow_id)
+        if not follow(db, user, follow_id): return
         # TODO delay = random.uniform(FOLLOW_PERIOD.total_seconds(), DAY.total_seconds() / FOLLOWS_PER_DAY)
         delay = random.uniform(1, 2) * FOLLOW_PERIOD.total_seconds()
         logging.info('sleeping for %.2f seconds', delay)
@@ -118,8 +124,9 @@ def main():
 
     with db, db.cursor() as cursor:
         users = database.get_users(cursor)
-    for user in users:
-        run(db, user)
+
+    gevent.joinall([gevent.spawn(run, db, user)
+                    for user in users])
 
 
 if __name__ == '__main__':
