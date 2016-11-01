@@ -17,7 +17,7 @@
 
 ### If you change Dockerfile or requirements.txt
 
-    docker build -t fllowers .
+    docker build --pull -t fllowers .
 
 ### While you're developing
 
