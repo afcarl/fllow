@@ -1,3 +1,6 @@
+import logging
+import time
+
 import requests
 import requests_oauthlib
 
@@ -28,11 +31,18 @@ def get(user, path, **params):
 def post(user, path, **params):
     return request('POST', user, path, **params)
 
-def request(method, user, path, **params):
+def request(method, user, path, retry=True, **params):
     response = session.request(method, 'https://api.twitter.com/1.1/' + path + '.json',
                                params=params,
                                auth=requests_oauthlib.OAuth1(CONSUMER_KEY, secret.CONSUMER_SECRET,
                                                              user.access_token,
                                                              user.access_token_secret))
+
+    if response.status_code == 429 and retry:
+        logging.warn('rate limit exceeded; sleeping until rate limit resets...')
+        reset_time = int(response.headers['x-rate-limit-reset'])
+        time.sleep(max(0, 1 + reset_time - time.time()))  # sleep an extra second to be safe
+        return request(method, user, path, retry=False, **params)
+
     response.raise_for_status()
     return response.json()
