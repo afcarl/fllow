@@ -72,11 +72,11 @@ def follow(db, user, twitter_id):
         twitter = database.get_twitter(cursor, twitter_id)
         user_follow = database.get_user_follow(cursor, user.id, twitter.id)
         last_followed_time = database.get_user_last_followed_time(cursor, user.id)
-        follows_count = database.get_user_follows_count(cursor, user.id, now() - DAY)
-    logging.info('%s following %s last followed at %s and %d follows today', user, twitter, last_followed_time, follows_count)
+        follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
+    logging.info('%s following %s last followed at %s and %d follows today', user, twitter, last_followed_time, follows_today)
     if user_follow: return logging.warning('but already followed at %s', user_follow.followed_time)
     if last_followed_time and now() - last_followed_time < FOLLOW_PERIOD: return logging.warning('but followed too recently')
-    if follows_count >= FOLLOWS_PER_DAY: return logging.warning('but too many follows today')
+    if follows_today >= FOLLOWS_PER_DAY: return logging.warning('but too many follows today')
 
     api.post(user, 'friendships/create', user_id=twitter.api_id)
     with db, db.cursor() as cursor:
