@@ -9,7 +9,7 @@ import secret
 
 CONSUMER_KEY = '9QswJgHJg1w1IzyVklleqS9Wb'
 
-session = requests.Session()
+session = requests  # requests.Session() keep-alive seems to die eventually :/
 
 def get_request_token():
     return (requests_oauthlib.OAuth1Session(CONSUMER_KEY, secret.CONSUMER_SECRET)
