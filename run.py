@@ -81,7 +81,6 @@ def follow(db, user, twitter_id):
     api.post(user, 'friendships/create', user_id=twitter.api_id)
     with db, db.cursor() as cursor:
         database.add_user_follow(cursor, user.id, twitter.id)
-    return True
 
 
 def run(db, user):
@@ -110,11 +109,22 @@ def run(db, user):
         follow_ids = [id for mentor_id in mentor_ids
                       for id in database.get_twitter_follower_ids(cursor, mentor_id)
                       if id not in followed_ids]
-    random.shuffle(follow_ids)
-    for follow_id in follow_ids:
-        if not follow(db, user, follow_id): return
-        # TODO delay = random.uniform(FOLLOW_PERIOD.total_seconds(), DAY.total_seconds() / FOLLOWS_PER_DAY)
-        delay = random.uniform(1, 2) * FOLLOW_PERIOD.total_seconds()
+        follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
+    logging.info('%s already has %d follows today', user, follows_today)
+    if follows_today < FOLLOWS_PER_DAY:
+        random.shuffle(follow_ids)
+        follow_ids = follow_ids[:(FOLLOWS_PER_DAY - follows_today)]
+        for follow_id in follow_ids:
+            follow(db, user, follow_id)
+            # TODO delay = random.uniform(FOLLOW_PERIOD.total_seconds(), DAY.total_seconds() / FOLLOWS_PER_DAY)
+            delay = random.uniform(1, 2) * FOLLOW_PERIOD.total_seconds()
+            logging.info('sleeping for %.2f seconds', delay)
+            time.sleep(delay)
+
+def run_forever(db, user):
+    while True:
+        run(db, user)
+        delay = random.uniform(0.1, 0.9) * DAY.total_seconds()
         logging.info('sleeping for %.2f seconds', delay)
         time.sleep(delay)
 
@@ -125,7 +135,7 @@ def main():
     with db, db.cursor() as cursor:
         users = database.get_users(cursor)
 
-    gevent.joinall([gevent.spawn(run, db, user)
+    gevent.joinall([gevent.spawn(run_forever, db, user)
                     for user in users])
 
 
