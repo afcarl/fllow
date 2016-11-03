@@ -114,6 +114,16 @@ def get_user_followed_ids(cursor, user_id, before=None, exclude_unfollowed=False
     cursor.execute(sql, values)
     return [row.followed_id for row in cursor.fetchall()]
 
+def get_user_followed_times(cursor, user_id):
+    cursor.execute('select followed_time from user_follows where user_id=%s'
+                   ' order by followed_time asc', (user_id,))
+    return [row.followed_time for row in cursor.fetchall()]
+
+def get_user_unfollowed_times(cursor, user_id):
+    cursor.execute('select unfollowed_time from user_follows where unfollowed_time is not null'
+                   ' and user_id=%s order by unfollowed_time asc', (user_id,))
+    return [row.unfollowed_time for row in cursor.fetchall()]
+
 def get_user_follows_count(cursor, user_id, since):
     cursor.execute('select count(*) from user_follows where user_id=%s and followed_time > %s',
                    (user_id, since))

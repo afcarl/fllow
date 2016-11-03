@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chartist/0.10.1/chartist.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartist/0.10.1/chartist.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.2/moment.min.js"></script>
+  </head>
+  <body>
+    <div class="ct-chart ct-perfect-fourth"></div>
+    <script>
+      FOLLOWED={{ followed|tojson }};
+      UNFOLLOWED={{ unfollowed|tojson }};
+    </script>
+    <script src="/static/user.js"></script>
+  </body>
+</html>
