@@ -16,7 +16,7 @@ FOLLOWS_PER_DAY = 100
 DAY = datetime.timedelta(days=1)
 FOLLOW_PERIOD = datetime.timedelta(seconds=5)
 UPDATE_PERIOD = 1 * DAY
-UNFOLLOW_PERIOD = 4 * DAY
+UNFOLLOW_PERIOD = 3 * DAY
 
 
 def now():
