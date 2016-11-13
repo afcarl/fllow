@@ -1,4 +1,4 @@
-flask
+flask==0.11.1
 gevent==1.1.2
 psycopg2==2.6.2
 requests==2.11.1
