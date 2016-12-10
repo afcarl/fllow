@@ -4,7 +4,7 @@
 
     docker create --name db-data postgres
     docker network create fllowers
-    docker run --name db --net fllowers --volumes-from db-data -d postgres
+    docker run --name db --net fllowers --volumes-from db-data [--restart always] -d postgres
     docker run --rm --net fllowers -i postgres psql -h db -U postgres < database.sql
 
 
