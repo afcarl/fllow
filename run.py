@@ -66,7 +66,12 @@ def unfollow(db, user, twitter_id):
     if user_follow.unfollowed_time: return warn(user, 'but they were already unfollowed at %s', user_follow.unfollowed_time)
     if not (updated_time and updated_time - user_follow.followed_time > UNFOLLOW_PERIOD): return warn(user, 'but they were followed too recently')
 
-    api.post(user, 'friendships/destroy', user_id=twitter.api_id)
+    try:
+        api.post(user, 'friendships/destroy', user_id=twitter.api_id)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code != 404: raise e
+        warn(user, 'twitter account %s no longer exists; marking as unfollowed', twitter)
+
     with db, db.cursor() as cursor:
         database.set_user_unfollowed(cursor, user.id, twitter.id)
 
