@@ -1,7 +1,7 @@
 create table twitters (
     id serial primary key,
     api_id bigint unique not null,
-    screen_name text check (screen_name != ''),
+    screen_name text unique check (screen_name != ''),
     updated_time timestamptz not null default now()
 );
 
