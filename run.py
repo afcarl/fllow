@@ -7,6 +7,7 @@ import random
 import time
 
 import gevent
+import requests
 
 import api
 import database
@@ -128,11 +129,15 @@ def run(db, user):
             time.sleep(delay)
 
 def run_forever(db, user):
-    while True:
-        run(db, user)
-        delay = random.uniform(0.1, 0.9) * DAY.total_seconds()
-        log(user, 'sleeping for %.2f seconds', delay)
-        time.sleep(delay)
+    try:
+        while True:
+            run(db, user)
+            delay = random.uniform(0.1, 0.9) * DAY.total_seconds()
+            log(user, 'sleeping for %.2f seconds', delay)
+            time.sleep(delay)
+    except requests.exceptions.HTTPError as e:
+        log(user, 'http error response: %s', e.response.text, level=logging.ERROR)
+        raise e
 
 
 def main():
