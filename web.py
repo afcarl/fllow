@@ -5,6 +5,12 @@ import database
 app = flask.Flask(__name__)
 db = database.connect()
 
+@app.route('/users')
+def users():
+    with db, db.cursor() as cursor:
+        users = database.get_users(cursor)
+    return flask.render_template('users.html', users=users)
+
 @app.route('/users/<screen_name>')
 def user(screen_name):
     with db, db.cursor() as cursor:
