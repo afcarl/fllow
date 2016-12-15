@@ -90,7 +90,12 @@ def follow(db, user, twitter_id):
     if last_followed_time and now() - last_followed_time < FOLLOW_PERIOD: return warn(user, 'but followed too recently')
     if follows_today >= FOLLOWS_PER_DAY: return warn(user, 'but too many follows today')
 
-    api.post(user, 'friendships/create', user_id=twitter.api_id)
+    try:
+        api.post(user, 'friendships/create', user_id=twitter.api_id)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code != 403: raise e
+        warn(user, 'marking %s as followed [%d %s]', twitter, e.response.status_code, e.response.text)
+
     with db, db.cursor() as cursor:
         database.add_user_follow(cursor, user.id, twitter.id)
 
