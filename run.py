@@ -70,7 +70,7 @@ def unfollow(db, user, twitter_id):
         api.post(user, 'friendships/destroy', user_id=twitter.api_id)
     except requests.exceptions.HTTPError as e:
         if e.response.status_code != 404: raise e
-        warn(user, 'twitter account %s no longer exists; marking as unfollowed', twitter)
+        warn(user, 'marking %s as unfollowed [%d %s]', twitter, e.response.status_code, e.response.text)
 
     with db, db.cursor() as cursor:
         database.set_user_unfollowed(cursor, user.id, twitter.id)
