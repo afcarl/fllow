@@ -13,7 +13,7 @@ import api
 import database
 
 
-FOLLOWS_PER_DAY = 100
+FOLLOWS_PER_DAY = 150
 DAY = datetime.timedelta(days=1)
 FOLLOW_PERIOD = datetime.timedelta(seconds=5)
 UPDATE_PERIOD = 1 * DAY
