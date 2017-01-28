@@ -37,35 +37,56 @@ def add_twitter_api_ids(cursor, api_ids):
 
 ## twitter_followers ##
 
-def get_twitter_follower_ids(cursor, twitter_id):
-    cursor.execute('select follower_id from twitter_followers where twitter_id=%s', (twitter_id,))
+def get_twitter_follower_ids(cursor, leader_id):
+    cursor.execute('select follower_id from twitter_followers'
+                   ' where leader_id=%s', (leader_id,))
     return [row.follower_id for row in cursor.fetchall()]
 
-def get_twitter_followers_updated_time(cursor, twitter_id):
-    cursor.execute('select min(updated_time) from twitter_followers where twitter_id=%s',
-                   (twitter_id,))
+def get_twitter_followers_updated_time(cursor, leader_id):
+    cursor.execute('select min(updated_time) from twitter_followers'
+                   ' where leader_id=%s', (leader_id,))
     return cursor.fetchone().min
 
-def get_twitter_followers_last_updated_time(cursor, twitter_id):
-    cursor.execute('select max(updated_time) from twitter_followers where twitter_id=%s',
-                   (twitter_id,))
+def get_twitter_followers_last_updated_time(cursor, leader_id):
+    cursor.execute('select max(updated_time) from twitter_followers'
+                   ' where leader_id=%s', (leader_id,))
     return cursor.fetchone().max
 
-def get_twitter_follower_updated_time(cursor, twitter_id, follower_id):
+def get_twitter_follower_updated_time(cursor, leader_id, follower_id):
     cursor.execute('select updated_time from twitter_followers'
-                   ' where twitter_id=%s and follower_id=%s', (twitter_id, follower_id))
+                   ' where leader_id=%s and follower_id=%s', (leader_id, follower_id))
     row = cursor.fetchone()
     if row: return row.updated_time
 
-def update_twitter_followers(cursor, twitter_id, follower_ids):
-    cursor.execute('insert into twitter_followers (twitter_id, follower_id) values '
+def update_twitter_followers(cursor, leader_id, follower_ids):
+    cursor.execute('insert into twitter_followers (leader_id, follower_id) values '
                    + ','.join('%s' for _ in follower_ids) +
-                   ' on conflict (twitter_id, follower_id) do update set updated_time=now()',
-                   [(twitter_id, follower_id) for follower_id in follower_ids])
+                   ' on conflict (leader_id, follower_id) do update set updated_time=now()',
+                   [(leader_id, follower_id) for follower_id in follower_ids])
 
-def delete_old_twitter_followers(cursor, twitter_id, before):
-    cursor.execute('delete from twitter_followers where twitter_id=%s and updated_time <= %s',
-                   (twitter_id, before))
+def delete_old_twitter_followers(cursor, leader_id, before):
+    cursor.execute('delete from twitter_followers'
+                   ' where leader_id=%s and updated_time <= %s', (leader_id, before))
+
+def get_twitter_leader_ids(cursor, follower_id):
+    cursor.execute('select leader_id from twitter_followers'
+                   ' where follower_id=%s', (follower_id,))
+    return [row.leader_id for row in cursor.fetchall()]
+
+def get_twitter_leaders_last_updated_time(cursor, follower_id):
+    cursor.execute('select max(updated_time) from twitter_followers'
+                   ' where follower_id=%s', (follower_id,))
+    return cursor.fetchone().max
+
+def update_twitter_leaders(cursor, follower_id, leader_ids):
+    cursor.execute('insert into twitter_followers (leader_id, follower_id) values '
+                   + ','.join('%s' for _ in follower_ids) +
+                   ' on conflict (leader_id, follower_id) do update set updated_time=now()',
+                   [(leader_id, follower_id) for leader_id in leader_ids])
+
+def delete_old_twitter_leaders(cursor, follower_id, before):
+    cursor.execute('delete from twitter_followers'
+                   ' where follower_id=%s and updated_time <= %s', (follower_id, before))
 
 
 ## users ##

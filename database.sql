@@ -6,10 +6,10 @@ create table twitters (
 );
 
 create table twitter_followers (
-    twitter_id integer not null references twitters,
+    leader_id integer not null references twitters,
     follower_id integer not null references twitters,
     updated_time timestamptz not null default now(),
-    unique (twitter_id, follower_id)
+    unique (leader_id, follower_id)
 );
 create index on twitter_followers (follower_id);
 
