@@ -30,8 +30,16 @@ create table user_mentors (
 
 create table user_follows (
     user_id integer not null references users,
-    followed_id integer not null references twitters,
-    followed_time timestamptz not null default now(),
-    unfollowed_time timestamptz,
-    unique (user_id, followed_id)
+    leader_id integer not null references twitters,
+    time timestamptz not null default now(),
+    unique (user_id, leader_id)
 );
+create index on user_follows (user_id, time);
+
+create table user_unfollows (
+    user_id integer not null references users,
+    leader_id integer not null references twitters,
+    time timestamptz not null default now(),
+    unique (user_id, leader_id)
+);
+create index on user_unfollows (user_id, time);

@@ -133,44 +133,58 @@ def get_user_mentor_ids(cursor, user_id):
 
 ## user_follows ##
 
-def get_user_followed_ids(cursor, user_id, before=None, exclude_unfollowed=False):
-    sql = 'select followed_id from user_follows where user_id=%s'
+def get_user_follow_leader_ids(cursor, user_id, before=None, exclude_unfollowed=False):
+    sql = 'select leader_id from user_follows where user_id=%s'
     values = [user_id]
     if before:
-        sql += ' and followed_time < %s'
+        sql += ' and time < %s'
         values += [before]
-    if exclude_unfollowed: sql += ' and unfollowed_time is null'
+    if exclude_unfollowed:  # TODO
+        raise RuntimeError('not implemented')
     cursor.execute(sql, values)
-    return [row.followed_id for row in cursor.fetchall()]
+    return [row.leader_id for row in cursor.fetchall()]
 
-def get_user_followed_times(cursor, user_id):
-    cursor.execute('select followed_time from user_follows where user_id=%s'
-                   ' order by followed_time asc', (user_id,))
-    return [row.followed_time for row in cursor.fetchall()]
-
-def get_user_unfollowed_times(cursor, user_id):
-    cursor.execute('select unfollowed_time from user_follows where unfollowed_time is not null'
-                   ' and user_id=%s order by unfollowed_time asc', (user_id,))
-    return [row.unfollowed_time for row in cursor.fetchall()]
+def get_user_follow_times(cursor, user_id):
+    cursor.execute('select time from user_follows'
+                   ' where user_id=%s'
+                   ' order by time asc',
+                   (user_id,))
+    return [row.time for row in cursor.fetchall()]
 
 def get_user_follows_count(cursor, user_id, since):
-    cursor.execute('select count(*) from user_follows where user_id=%s and followed_time > %s',
-                   (user_id, since))
+    cursor.execute('select count(*) from user_follows'
+                   ' where user_id=%s and time > %s', (user_id, since))
     return cursor.fetchone().count
 
-def get_user_last_followed_time(cursor, user_id):
-    cursor.execute('select max(followed_time) from user_follows where user_id=%s', (user_id,))
+def get_user_follows_last_time(cursor, user_id):
+    cursor.execute('select max(time) from user_follows'
+                   ' where user_id=%s', (user_id,))
     return cursor.fetchone().max
 
-def get_user_follow(cursor, user_id, followed_id):
-    cursor.execute('select followed_time, unfollowed_time from user_follows'
-                   ' where user_id=%s and followed_id=%s', (user_id, followed_id))
+def get_user_follow(cursor, user_id, leader_id):
+    cursor.execute('select time from user_follows'
+                   ' where user_id=%s and leader_id=%s', (user_id, leader_id))
     return cursor.fetchone()
 
-def add_user_follow(cursor, user_id, followed_id):
-    cursor.execute('insert into user_follows (user_id, followed_id) values (%s, %s)',
-                   (user_id, followed_id))
+def add_user_follow(cursor, user_id, leader_id):
+    cursor.execute('insert into user_follows (user_id, leader_id)'
+                   ' values (%s, %s)', (user_id, leader_id))
 
-def set_user_unfollowed(cursor, user_id, followed_id):
-    cursor.execute('update user_follows set unfollowed_time=now()'
-                   ' where user_id=%s and followed_id=%s', (user_id, followed_id))
+
+## user_unfollows ##
+
+def get_user_unfollow_times(cursor, user_id):
+    cursor.execute('select time from user_unfollows'
+                   ' where user_id=%s'
+                   ' order by time asc',
+                   (user_id,))
+    return [row.time for row in cursor.fetchall()]
+
+def get_user_unfollow(cursor, user_id, leader_id):
+    cursor.execute('select time from user_unfollows'
+                   ' where user_id=%s and leader_id=%s', (user_id, leader_id))
+    return cursor.fetchone()
+
+def add_user_unfollow(cursor, user_id, leader_id):
+    cursor.execute('insert into user_unfollows (user_id, leader_id)'
+                   ' values (%s, %s)', (user_id, leader_id))
