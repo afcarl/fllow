@@ -16,21 +16,25 @@ def connect():
 ## twitters ##
 
 def get_twitter(cursor, twitter_id):
-    cursor.execute('select id, api_id, screen_name from twitters where id=%s', (twitter_id,))
+    cursor.execute('select id, api_id, screen_name from twitters'
+                   ' where id=%s', (twitter_id,))
     return cursor.fetchone()
 
 def update_twitters(cursor, api_twitters):
     cursor.execute('insert into twitters (api_id, screen_name) values '
                    + ','.join('%s' for _ in api_twitters) +
-                   ' on conflict (api_id) do update set screen_name=excluded.screen_name,'
-                   ' updated_time=now() returning id',
+                   ' on conflict (api_id)'
+                   ' do update set screen_name=excluded.screen_name, updated_time=now()'
+                   ' returning id',
                    [(t['id'], t['screen_name']) for t in api_twitters])
     return [row.id for row in cursor.fetchall()]
 
 def add_twitter_api_ids(cursor, api_ids):
     # note that you can't use "do nothing" and "returning", so we do a meaningless update:
-    cursor.execute('insert into twitters (api_id) values ' + ','.join('(%s)' for _ in api_ids) +
-                   ' on conflict (api_id) do update set id=twitters.id returning id',
+    cursor.execute('insert into twitters (api_id) values '
+                   + ','.join('(%s)' for _ in api_ids) +
+                   ' on conflict (api_id) do update set id=twitters.id'
+                   ' returning id',
                    api_ids)
     return [row.id for row in cursor.fetchall()]
 
@@ -93,20 +97,23 @@ def delete_old_twitter_leaders(cursor, follower_id, before):
 
 def get_users(cursor):
     cursor.execute('select users.id, twitter_id, access_token, access_token_secret, screen_name'
-                   ' from users, twitters where twitter_id=twitters.id')
+                   ' from users, twitters'
+                   ' where twitter_id=twitters.id')
     return cursor.fetchall()
 
 def get_user(cursor, screen_name):
     cursor.execute('select users.id, twitter_id, access_token, access_token_secret, screen_name'
-                   ' from users, twitters where twitter_id=twitters.id and screen_name=%s',
-                   (screen_name,))
+                   ' from users, twitters'
+                   ' where twitter_id=twitters.id and screen_name=%s', (screen_name,))
     return cursor.fetchone()
 
 def update_user(cursor, twitter_id, access_token, access_token_secret):
     cursor.execute('insert into users (twitter_id, access_token, access_token_secret)'
                    ' values (%s, %s, %s)'
-                   ' on conflict (twitter_id) do update set access_token=excluded.access_token,'
-                   ' access_token_secret=excluded.access_token_secret, updated_time=now()',
+                   ' on conflict (twitter_id) do update set'
+                   ' access_token=excluded.access_token,'
+                   ' access_token_secret=excluded.access_token_secret,'
+                   ' updated_time=now()',
                    (twitter_id, access_token, access_token_secret))
 
 
@@ -119,7 +126,8 @@ def add_user_mentors(cursor, user_id, mentor_ids):
                    [(user_id, mentor_id) for mentor_id in mentor_ids])
 
 def get_user_mentor_ids(cursor, user_id):
-    cursor.execute('select mentor_id from user_mentors where user_id=%s', (user_id,))
+    cursor.execute('select mentor_id from user_mentors'
+                   ' where user_id=%s', (user_id,))
     return [row.mentor_id for row in cursor.fetchall()]
 
 
