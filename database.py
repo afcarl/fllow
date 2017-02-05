@@ -84,7 +84,7 @@ def get_twitter_leaders_last_updated_time(cursor, follower_id):
 
 def update_twitter_leaders(cursor, follower_id, leader_ids):
     cursor.execute('insert into twitter_followers (leader_id, follower_id) values '
-                   + ','.join('%s' for _ in follower_ids) +
+                   + ','.join('%s' for _ in leader_ids) +
                    ' on conflict (leader_id, follower_id) do update set updated_time=now()',
                    [(leader_id, follower_id) for leader_id in leader_ids])
 
