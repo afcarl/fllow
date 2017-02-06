@@ -36,7 +36,8 @@ def update_leaders(db, user, follower_id):
         twitter = database.get_twitter(cursor, follower_id)
         last_updated_time = database.get_twitter_leaders_last_updated_time(cursor, follower_id)
     log(user, 'maybe updating leaders for %s last updated at %s', twitter, last_updated_time)
-    if last_updated_time and now() - last_updated_time < UPDATE_PERIOD: return log(user, 'updated too recently')
+    if last_updated_time and now() - last_updated_time < UPDATE_PERIOD:
+        return log(user, 'updated too recently')
 
     api_cursor = -1  # cursor=-1 requests first page
     while api_cursor:  # cursor=0 means no more pages
@@ -60,7 +61,8 @@ def update_followers(db, user, leader_id):
         twitter = database.get_twitter(cursor, leader_id)
         last_updated_time = database.get_twitter_followers_last_updated_time(cursor, leader_id)
     log(user, 'maybe updating followers for %s last updated at %s', twitter, last_updated_time)
-    if last_updated_time and now() - last_updated_time < UPDATE_PERIOD: return log(user, 'updated too recently')
+    if last_updated_time and now() - last_updated_time < UPDATE_PERIOD:
+        return log(user, 'updated too recently')
 
     api_cursor = -1  # cursor=-1 requests first page
     while api_cursor:  # cursor=0 means no more pages
@@ -86,16 +88,22 @@ def unfollow(db, user, leader_id):
         user_follow = database.get_user_follow(cursor, user.id, leader_id)
         user_unfollow = database.get_user_unfollow(cursor, user.id, leader_id)
         updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
-    log(user, 'unfollowing %s followed at %s updated at %s', twitter, user_follow.time, updated_time)
-    if not user_follow: return warn(user, 'but they were never followed')
-    if user_unfollow: return warn(user, 'but they were already unfollowed at %s', user_unfollow.time)
-    if not (updated_time and updated_time - user_follow.time > UNFOLLOW_PERIOD): return warn(user, 'but they were followed too recently')
+    log(user, 'unfollowing %s followed at %s updated at %s',
+        twitter, user_follow.time, updated_time)
+    if not user_follow:
+        return warn(user, 'but they were never followed')
+    if user_unfollow:
+        return warn(user, 'but they were already unfollowed at %s', user_unfollow.time)
+    if not (updated_time and updated_time - user_follow.time > UNFOLLOW_PERIOD):
+        return warn(user, 'but they were followed too recently')
 
     try:
         api.post(user, 'friendships/destroy', user_id=twitter.api_id)
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code != 404: raise e
-        warn(user, 'marking %s as unfollowed [%d %s]', twitter, e.response.status_code, e.response.text)
+        if e.response.status_code != 404:
+            raise e
+        warn(user, 'marking %s as unfollowed [%d %s]',
+             twitter, e.response.status_code, e.response.text)
 
     with db, db.cursor() as cursor:
         database.add_user_unfollow(cursor, user.id, leader_id)
@@ -110,16 +118,22 @@ def follow(db, user, leader_id):
         user_follow = database.get_user_follow(cursor, user.id, leader_id)
         last_follow_time = database.get_user_follows_last_time(cursor, user.id)
         follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
-    log(user, 'following %s last followed at %s and %d follows today', twitter, last_follow_time, follows_today)
-    if user_follow: return warn(user, 'but already followed at %s', user_follow.time)
-    if last_follow_time and now() - last_follow_time < FOLLOW_PERIOD: return warn(user, 'but followed too recently')
-    if follows_today >= FOLLOWS_PER_DAY: return warn(user, 'but too many follows today')
+    log(user, 'following %s last followed at %s and %d follows today',
+        twitter, last_follow_time, follows_today)
+    if user_follow:
+        return warn(user, 'but already followed at %s', user_follow.time)
+    if last_follow_time and now() - last_follow_time < FOLLOW_PERIOD:
+        return warn(user, 'but followed too recently')
+    if follows_today >= FOLLOWS_PER_DAY:
+        return warn(user, 'but too many follows today')
 
     try:
         api.post(user, 'friendships/create', user_id=twitter.api_id)
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code != 403: raise e
-        warn(user, 'marking %s as followed [%d %s]', twitter, e.response.status_code, e.response.text)
+        if e.response.status_code != 403:
+            raise e
+        warn(user, 'marking %s as followed [%d %s]',
+             twitter, e.response.status_code, e.response.text)
 
     with db, db.cursor() as cursor:
         database.add_user_follow(cursor, user.id, leader_id)
@@ -144,7 +158,8 @@ def run(db, user):
     log(user, '%d currently followed', len(leader_ids))
     log(user, '%d followed before %s', len(followed_ids), before)
     log(user, '…of whom %d are still followed', len(followed_ids & leader_ids))
-    unfollow_ids = followed_ids&leader_ids - follower_ids  # don't unfollow people we aren't following, or who followed back
+    # don't unfollow people we aren't following, or who followed back:
+    unfollow_ids = followed_ids & leader_ids - follower_ids
     log(user, '…of whom %d have not followed back', len(unfollow_ids))
     for unfollow_id in unfollow_ids:
         unfollow(db, user, unfollow_id)

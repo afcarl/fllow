@@ -13,7 +13,7 @@ def connect():
                             cursor_factory=psycopg2.extras.NamedTupleCursor)
 
 
-## twitters ##
+# twitters
 
 def get_twitter(cursor, twitter_id):
     cursor.execute('select id, api_id, screen_name from twitters'
@@ -39,7 +39,7 @@ def add_twitter_api_ids(cursor, api_ids):
     return [row.id for row in cursor.fetchall()]
 
 
-## twitter_followers ##
+# twitter_followers
 
 def get_twitter_follower_ids(cursor, leader_id):
     cursor.execute('select follower_id from twitter_followers'
@@ -60,7 +60,8 @@ def get_twitter_follower_updated_time(cursor, leader_id, follower_id):
     cursor.execute('select updated_time from twitter_followers'
                    ' where leader_id=%s and follower_id=%s', (leader_id, follower_id))
     row = cursor.fetchone()
-    if row: return row.updated_time
+    if row:
+        return row.updated_time
 
 def update_twitter_followers(cursor, leader_id, follower_ids):
     cursor.execute('insert into twitter_followers (leader_id, follower_id) values '
@@ -93,7 +94,7 @@ def delete_old_twitter_leaders(cursor, follower_id, before):
                    ' where follower_id=%s and updated_time <= %s', (follower_id, before))
 
 
-## users ##
+# users
 
 def get_users(cursor):
     cursor.execute('select users.id, twitter_id, access_token, access_token_secret, screen_name'
@@ -117,7 +118,7 @@ def update_user(cursor, twitter_id, access_token, access_token_secret):
                    (twitter_id, access_token, access_token_secret))
 
 
-## user_mentors ##
+# user_mentors
 
 def add_user_mentors(cursor, user_id, mentor_ids):
     cursor.execute('insert into user_mentors (user_id, mentor_id) values '
@@ -131,7 +132,7 @@ def get_user_mentor_ids(cursor, user_id):
     return [row.mentor_id for row in cursor.fetchall()]
 
 
-## user_follows ##
+# user_follows
 
 def get_user_follow_leader_ids(cursor, user_id, before=None, exclude_unfollowed=False):
     sql = 'select leader_id from user_follows where user_id=%s'
@@ -171,7 +172,7 @@ def add_user_follow(cursor, user_id, leader_id):
                    ' values (%s, %s)', (user_id, leader_id))
 
 
-## user_unfollows ##
+# user_unfollows
 
 def get_user_unfollow_times(cursor, user_id):
     cursor.execute('select time from user_unfollows'
