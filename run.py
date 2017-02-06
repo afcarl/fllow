@@ -33,7 +33,7 @@ def update_leaders(db, user, follower_id):
     # only update leaders if they haven't been updated recently:
     with db, db.cursor() as cursor:
         twitter = database.get_twitter(cursor, follower_id)
-        updated_time = database.get_twitter_leaders_first_updated_time(cursor, follower_id)
+        updated_time = database.get_twitter_leaders_updated_time(cursor, follower_id)
         cutoff_time = database.get_current_time(cursor)
     log(user, 'maybe updating leaders for %s updated at %s', twitter, updated_time)
     if updated_time and now() - updated_time < UPDATE_PERIOD:
@@ -59,7 +59,7 @@ def update_followers(db, user, leader_id):
     # only update followers if they haven't been updated recently:
     with db, db.cursor() as cursor:
         twitter = database.get_twitter(cursor, leader_id)
-        updated_time = database.get_twitter_followers_first_updated_time(cursor, leader_id)
+        updated_time = database.get_twitter_followers_updated_time(cursor, leader_id)
         cutoff_time = database.get_current_time(cursor)
     log(user, 'maybe updating followers for %s updated at %s', twitter, updated_time)
     if updated_time and now() - updated_time < UPDATE_PERIOD:

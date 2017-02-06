@@ -55,11 +55,6 @@ def get_twitter_followers_updated_time(cursor, leader_id):
                    ' where leader_id=%s', (leader_id,))
     return cursor.fetchone().min
 
-def get_twitter_followers_first_updated_time(cursor, leader_id):
-    cursor.execute('select min(updated_time) from twitter_followers'
-                   ' where leader_id=%s', (leader_id,))
-    return cursor.fetchone().min
-
 def get_twitter_follower_updated_time(cursor, leader_id, follower_id):
     cursor.execute('select updated_time from twitter_followers'
                    ' where leader_id=%s and follower_id=%s', (leader_id, follower_id))
@@ -82,7 +77,7 @@ def get_twitter_leader_ids(cursor, follower_id):
                    ' where follower_id=%s', (follower_id,))
     return [row.leader_id for row in cursor.fetchall()]
 
-def get_twitter_leaders_first_updated_time(cursor, follower_id):
+def get_twitter_leaders_updated_time(cursor, follower_id):
     cursor.execute('select min(updated_time) from twitter_followers'
                    ' where follower_id=%s', (follower_id,))
     return cursor.fetchone().min
