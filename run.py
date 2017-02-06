@@ -134,6 +134,7 @@ def follow(db, user, leader_id):
     except requests.exceptions.HTTPError as e:
         if e.response.status_code != 403:
             raise e
+        # 403 can mean blocked or already following
         warn(user, 'marking %s as followed [%d %s]',
              twitter, e.response.status_code, e.response.text)
 
