@@ -185,6 +185,8 @@ def get_user_unfollow(cursor, user_id, leader_id):
                    ' where user_id=%s and leader_id=%s', (user_id, leader_id))
     return cursor.fetchone()
 
-def add_user_unfollow(cursor, user_id, leader_id):
+def update_user_unfollow(cursor, user_id, leader_id):
     cursor.execute('insert into user_unfollows (user_id, leader_id)'
-                   ' values (%s, %s)', (user_id, leader_id))
+                   ' values (%s, %s)'
+                   ' on conflict (user_id, leader_id) do update set time=now()',
+                   (user_id, leader_id))
