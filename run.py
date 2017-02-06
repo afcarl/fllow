@@ -90,7 +90,7 @@ def unfollow(db, user, leader_id):
         user_unfollow = database.get_user_unfollow(cursor, user.id, leader_id)
         updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
     log(user, 'unfollowing %s followed at %s updated at %s',
-        twitter, user_follow.time, updated_time)
+        twitter, user_follow, updated_time)
     if not user_follow:
         return warn(user, 'but they were never followed')
     if user_unfollow:
