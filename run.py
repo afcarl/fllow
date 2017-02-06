@@ -104,8 +104,8 @@ def unfollow(db, user, leader_id):
     except requests.exceptions.HTTPError as e:
         if e.response.status_code != 404:
             raise e
-        warn(user, 'marking %s as unfollowed [%d %s]',
-             twitter, e.response.status_code, e.response.text)
+        return warn(user, 'failed to unfollow %s [%d %s]',
+                    twitter, e.response.status_code, e.response.text)
 
     with db, db.cursor() as cursor:
         database.update_user_unfollow(cursor, user.id, leader_id)
