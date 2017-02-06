@@ -33,9 +33,10 @@ def update_leaders(db, user, follower_id):
     # only update leaders if they haven't been updated recently:
     with db, db.cursor() as cursor:
         twitter = database.get_twitter(cursor, follower_id)
-        last_updated_time = database.get_twitter_leaders_last_updated_time(cursor, follower_id)
-    log(user, 'maybe updating leaders for %s last updated at %s', twitter, last_updated_time)
-    if last_updated_time and now() - last_updated_time < UPDATE_PERIOD:
+        updated_time = database.get_twitter_leaders_first_updated_time(cursor, follower_id)
+        cutoff_time = database.get_current_time(cursor)
+    log(user, 'maybe updating leaders for %s updated at %s', twitter, updated_time)
+    if updated_time and now() - updated_time < UPDATE_PERIOD:
         return log(user, 'updated too recently')
 
     api_cursor = -1  # cursor=-1 requests first page
@@ -49,18 +50,19 @@ def update_leaders(db, user, follower_id):
             leader_ids = database.add_twitter_api_ids(cursor, data['ids'])
             database.update_twitter_leaders(cursor, follower_id, leader_ids)
 
-    if last_updated_time:  # delete leaders who weren't seen again
-        with db, db.cursor() as cursor:
-            database.delete_old_twitter_leaders(cursor, follower_id, last_updated_time)
+    # delete leaders who weren't seen again:
+    with db, db.cursor() as cursor:
+        database.delete_old_twitter_leaders(cursor, follower_id, cutoff_time)
 
 
 def update_followers(db, user, leader_id):
     # only update followers if they haven't been updated recently:
     with db, db.cursor() as cursor:
         twitter = database.get_twitter(cursor, leader_id)
-        last_updated_time = database.get_twitter_followers_last_updated_time(cursor, leader_id)
-    log(user, 'maybe updating followers for %s last updated at %s', twitter, last_updated_time)
-    if last_updated_time and now() - last_updated_time < UPDATE_PERIOD:
+        updated_time = database.get_twitter_followers_first_updated_time(cursor, leader_id)
+        cutoff_time = database.get_current_time(cursor)
+    log(user, 'maybe updating followers for %s updated at %s', twitter, updated_time)
+    if updated_time and now() - updated_time < UPDATE_PERIOD:
         return log(user, 'updated too recently')
 
     api_cursor = -1  # cursor=-1 requests first page
@@ -74,9 +76,9 @@ def update_followers(db, user, leader_id):
             follower_ids = database.add_twitter_api_ids(cursor, data['ids'])
             database.update_twitter_followers(cursor, leader_id, follower_ids)
 
-    if last_updated_time:  # delete followers who weren't seen again
-        with db, db.cursor() as cursor:
-            database.delete_old_twitter_followers(cursor, leader_id, last_updated_time)
+    # delete followers who weren't seen again:
+    with db, db.cursor() as cursor:
+        database.delete_old_twitter_followers(cursor, leader_id, cutoff_time)
 
 
 def unfollow(db, user, leader_id):

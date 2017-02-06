@@ -12,6 +12,10 @@ def connect():
     return psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD,
                             cursor_factory=psycopg2.extras.NamedTupleCursor)
 
+def get_current_time(cursor):
+    cursor.execute('select now()')
+    return cursor.fetchone().now
+
 
 # twitters
 
@@ -51,10 +55,10 @@ def get_twitter_followers_updated_time(cursor, leader_id):
                    ' where leader_id=%s', (leader_id,))
     return cursor.fetchone().min
 
-def get_twitter_followers_last_updated_time(cursor, leader_id):
-    cursor.execute('select max(updated_time) from twitter_followers'
+def get_twitter_followers_first_updated_time(cursor, leader_id):
+    cursor.execute('select min(updated_time) from twitter_followers'
                    ' where leader_id=%s', (leader_id,))
-    return cursor.fetchone().max
+    return cursor.fetchone().min
 
 def get_twitter_follower_updated_time(cursor, leader_id, follower_id):
     cursor.execute('select updated_time from twitter_followers'
@@ -78,10 +82,10 @@ def get_twitter_leader_ids(cursor, follower_id):
                    ' where follower_id=%s', (follower_id,))
     return [row.leader_id for row in cursor.fetchall()]
 
-def get_twitter_leaders_last_updated_time(cursor, follower_id):
-    cursor.execute('select max(updated_time) from twitter_followers'
+def get_twitter_leaders_first_updated_time(cursor, follower_id):
+    cursor.execute('select min(updated_time) from twitter_followers'
                    ' where follower_id=%s', (follower_id,))
-    return cursor.fetchone().max
+    return cursor.fetchone().min
 
 def update_twitter_leaders(cursor, follower_id, leader_ids):
     cursor.execute('insert into twitter_followers (leader_id, follower_id) values '
