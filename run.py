@@ -93,11 +93,10 @@ def unfollow(db, user, leader_id):
         twitter, user_follow, updated_time)
     if not user_follow:
         return warn(user, 'but they were never followed')
+    if user_unfollow:
+        return warn(user, 'but they were already unfollowed at %s', user_unfollow.time)
     if not (updated_time and updated_time - user_follow.time > UNFOLLOW_PERIOD):
         return warn(user, 'but they were followed too recently')
-
-    if user_unfollow:
-        warn(user, 'even though they were already unfollowed at %s', user_unfollow.time)
 
     try:
         api.post(user, 'friendships/destroy', user_id=twitter.api_id)
@@ -108,7 +107,7 @@ def unfollow(db, user, leader_id):
                     twitter, e.response.status_code, e.response.text)
 
     with db, db.cursor() as cursor:
-        database.update_user_unfollow(cursor, user.id, leader_id)
+        database.add_user_unfollow(cursor, user.id, leader_id)
 
 
 def follow(db, user, leader_id):
