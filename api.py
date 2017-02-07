@@ -39,9 +39,11 @@ def request(method, user, path, retry=True, **params):
                                                              user.access_token_secret))
 
     if response.status_code == 429 and retry:
-        logging.warn('rate limit exceeded; sleeping until rate limit resets...')
         reset_time = int(response.headers['x-rate-limit-reset'])
-        time.sleep(max(0, 1 + reset_time - time.time()))  # sleep an extra second to be safe
+        sleep_time = max(0, 1 + reset_time - time.time())  # sleep an extra second to be safe
+        logging.warn('rate limit exceeded; sleeping %.1f seconds until rate limit resets...',
+                     sleep_time)
+        time.sleep(sleep_time)
         return request(method, user, path, retry=False, **params)
 
     response.raise_for_status()
