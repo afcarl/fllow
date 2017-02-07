@@ -15,12 +15,12 @@ def users():
 def user(screen_name):
     with db, db.cursor() as cursor:
         user = database.get_user(cursor, screen_name)
-        followed_times = database.get_user_followed_times(cursor, user.id)
-        unfollowed_times = database.get_user_unfollowed_times(cursor, user.id)
+        follow_times = database.get_user_follow_times(cursor, user.id)
+        unfollow_times = database.get_user_unfollow_times(cursor, user.id)
     return flask.render_template(
         'user.html',
-        followed=[t.timestamp() for t in followed_times],
-        unfollowed=[t.timestamp() for t in unfollowed_times]
+        followed=[t.timestamp() for t in follow_times],
+        unfollowed=[t.timestamp() for t in unfollow_times]
     )
 
 
