@@ -133,14 +133,12 @@ def get_user_mentor_ids(cursor, user_id):
 
 # user_follows
 
-def get_user_follow_leader_ids(cursor, user_id, before=None, exclude_unfollowed=False):
+def get_user_follow_leader_ids(cursor, user_id, before=None):
     sql = 'select leader_id from user_follows where user_id=%s'
     values = [user_id]
     if before:
         sql += ' and time < %s'
         values += [before]
-    if exclude_unfollowed:  # TODO
-        raise RuntimeError('not implemented')
     cursor.execute(sql, values)
     return [row.leader_id for row in cursor.fetchall()]
 
@@ -172,6 +170,11 @@ def add_user_follow(cursor, user_id, leader_id):
 
 
 # user_unfollows
+
+def get_user_unfollow_leader_ids(cursor, user_id):
+    cursor.execute('select leader_id from user_unfollows'
+                   ' where user_id=%s', (user_id,))
+    return [row.leader_id for row in cursor.fetchall()]
 
 def get_user_unfollow_times(cursor, user_id):
     cursor.execute('select time from user_unfollows'
