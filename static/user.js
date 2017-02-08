@@ -1,7 +1,12 @@
-function datify(times) {
-    const data = times.map((t, i) => ({x: new Date(t*1000), y: i+1}));
+function datify(day_counts) {
+    let total = 0;
+    data = day_counts.map(day_count => {
+        total += day_count[1];
+        return {x: new Date(day_count[0] * 1000),
+                y: total};
+    });
     // add a dummy value with current time, for better chart range:
-    if (data.length) data.push({x: new Date(), y: data[data.length-1].y})
+    data.push({x: new Date(), y: total});
     return data;
 };
 
@@ -9,11 +14,11 @@ var chart = new Chartist.Line('.ct-chart', {
   series: [
     {
       name: 'series-1',
-      data: datify(FOLLOWED)
+      data: datify(FOLLOW_DAY_COUNTS)
     },
     {
       name: 'series-2',
-      data: datify(UNFOLLOWED)
+      data: datify(UNFOLLOW_DAY_COUNTS)
     }
   ]
 }, {

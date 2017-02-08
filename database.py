@@ -142,12 +142,12 @@ def get_user_follow_leader_ids(cursor, user_id, before=None):
     cursor.execute(sql, values)
     return [row.leader_id for row in cursor.fetchall()]
 
-def get_user_follow_times(cursor, user_id):
-    cursor.execute('select time from user_follows'
+def get_user_follow_day_counts(cursor, user_id):
+    cursor.execute("select date_trunc('day', time) as day, count(*) from user_follows"
                    ' where user_id=%s'
-                   ' order by time asc',
+                   ' group by day order by day asc',
                    (user_id,))
-    return [row.time for row in cursor.fetchall()]
+    return cursor.fetchall()
 
 def get_user_follows_count(cursor, user_id, since):
     cursor.execute('select count(*) from user_follows'
@@ -176,12 +176,12 @@ def get_user_unfollow_leader_ids(cursor, user_id):
                    ' where user_id=%s', (user_id,))
     return [row.leader_id for row in cursor.fetchall()]
 
-def get_user_unfollow_times(cursor, user_id):
-    cursor.execute('select time from user_unfollows'
+def get_user_unfollow_day_counts(cursor, user_id):
+    cursor.execute("select date_trunc('day', time) as day, count(*) from user_unfollows"
                    ' where user_id=%s'
-                   ' order by time asc',
+                   ' group by day order by day asc',
                    (user_id,))
-    return [row.time for row in cursor.fetchall()]
+    return cursor.fetchall()
 
 def get_user_unfollow(cursor, user_id, leader_id):
     cursor.execute('select time from user_unfollows'
