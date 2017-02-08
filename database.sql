@@ -8,6 +8,7 @@ create table twitters (
 create table twitter_followers (
     leader_id integer not null references twitters,
     follower_id integer not null references twitters,
+    added_time timestamptz not null default now(),
     updated_time timestamptz not null default now(),
     unique (leader_id, follower_id)
 );
