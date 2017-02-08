@@ -66,6 +66,10 @@ def update_twitter_followers(cursor, leader_id, follower_ids):
                    ' on conflict (leader_id, follower_id) do update set updated_time=now()',
                    [(leader_id, follower_id) for follower_id in follower_ids])
 
+def delete_twitter_follower(cursor, leader_id, follower_id):
+    cursor.execute('delete from twitter_followers'
+                   ' where leader_id=%s and follower_id=%s', (leader_id, follower_id))
+
 def delete_old_twitter_followers(cursor, leader_id, before):
     cursor.execute('delete from twitter_followers'
                    ' where leader_id=%s and updated_time <= %s', (leader_id, before))

@@ -112,6 +112,7 @@ def unfollow(db, user, leader_id):
 
     with db, db.cursor() as cursor:
         database.add_user_unfollow(cursor, user.id, leader_id)
+        database.delete_twitter_follower(cursor, leader_id, user.twitter_id)
 
 
 def follow(db, user, leader_id):
@@ -134,15 +135,19 @@ def follow(db, user, leader_id):
 
     try:
         api.post(user, 'friendships/create', user_id=twitter.api_id)
+        followed = True
     except requests.exceptions.HTTPError as e:
         if e.response.status_code != 403:
             raise e
-        # 403 can mean blocked or already following
+        # 403 can mean blocked or already following, so we mark as followed
         warn(user, 'marking %s as followed [%d %s]',
              twitter, e.response.status_code, e.response.text)
+        followed = False
 
     with db, db.cursor() as cursor:
         database.add_user_follow(cursor, user.id, leader_id)
+        if followed:
+            database.update_twitter_followers(cursor, leader_id, (user.twitter_id,))
 
 
 def run(db, user):
