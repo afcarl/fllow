@@ -89,6 +89,7 @@ def unfollow(db, user, leader_id):
         twitter = database.get_twitter(cursor, leader_id)
         user_follow = database.get_user_follow(cursor, user.id, leader_id)
         user_unfollow = database.get_user_unfollow(cursor, user.id, leader_id)
+        follower = database.get_twitter_follower(cursor, user.twitter_id, leader_id)
         updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
     log(user, 'unfollowing %s followed at %s updated at %s',
         twitter, user_follow, updated_time)
@@ -96,7 +97,9 @@ def unfollow(db, user, leader_id):
         return warn(user, 'but they were never followed')
     if user_unfollow:
         return warn(user, 'but they were already unfollowed at %s', user_unfollow.time)
-    if not (updated_time and updated_time - user_follow.time > UNFOLLOW_PERIOD):
+    if follower:
+        return warn(user, 'but they followed back at %s', follower.added_time)
+    if not updated_time or (updated_time - user_follow.time < UNFOLLOW_PERIOD):
         return warn(user, 'but they were followed too recently')
 
     try:
@@ -123,7 +126,7 @@ def follow(db, user, leader_id):
     log(user, 'following %s last followed at %s and %d follows today',
         twitter, last_follow_time, follows_today)
     if user_follow:
-        return warn(user, 'but already followed at %s', user_follow.time)
+        return warn(user, 'but they were already followed at %s', user_follow.time)
     if last_follow_time and now() - last_follow_time < FOLLOW_PERIOD:
         return warn(user, 'but followed too recently')
     if follows_today >= FOLLOWS_PER_DAY:

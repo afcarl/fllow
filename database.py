@@ -55,12 +55,10 @@ def get_twitter_followers_updated_time(cursor, leader_id):
                    ' where leader_id=%s', (leader_id,))
     return cursor.fetchone().min
 
-def get_twitter_follower_updated_time(cursor, leader_id, follower_id):
-    cursor.execute('select updated_time from twitter_followers'
+def get_twitter_follower(cursor, leader_id, follower_id):
+    cursor.execute('select * from twitter_followers'
                    ' where leader_id=%s and follower_id=%s', (leader_id, follower_id))
-    row = cursor.fetchone()
-    if row:
-        return row.updated_time
+    return cursor.fetchone()
 
 def update_twitter_followers(cursor, leader_id, follower_ids):
     cursor.execute('insert into twitter_followers (leader_id, follower_id) values '
