@@ -13,8 +13,9 @@ import database
 
 
 FOLLOWS_PER_DAY = 250
-DAY = datetime.timedelta(days=1)
 FOLLOW_PERIOD = datetime.timedelta(seconds=5)
+DAY = datetime.timedelta(days=1)
+USER_FOLLOWERS_UPDATE_PERIOD = 0.25 * DAY
 UPDATE_PERIOD = 1 * DAY
 UNFOLLOW_PERIOD = 3 * DAY
 
@@ -55,14 +56,14 @@ def update_leaders(db, user, follower_id):
         database.delete_old_twitter_leaders(cursor, follower_id, cutoff_time)
 
 
-def update_followers(db, user, leader_id):
+def update_followers(db, user, leader_id, update_period=UPDATE_PERIOD):
     # only update followers if they haven't been updated recently:
     with db, db.cursor() as cursor:
         twitter = database.get_twitter(cursor, leader_id)
         updated_time = database.get_twitter_followers_updated_time(cursor, leader_id)
         cutoff_time = database.get_current_time(cursor)
     log(user, 'maybe updating followers for %s updated at %s', twitter, updated_time)
-    if updated_time and now() - updated_time < UPDATE_PERIOD:
+    if updated_time and now() - updated_time < update_period:
         return log(user, 'updated too recently')
 
     api_cursor = -1  # cursor=-1 requests first page
@@ -148,7 +149,7 @@ def run(db, user):
         update_followers(db, user, mentor_id)
 
     update_leaders(db, user, user.twitter_id)
-    update_followers(db, user, user.twitter_id)
+    update_followers(db, user, user.twitter_id, update_period=USER_FOLLOWERS_UPDATE_PERIOD)
 
     with db, db.cursor() as cursor:
         leader_ids = set(database.get_twitter_leader_ids(cursor, user.twitter_id))
@@ -181,18 +182,17 @@ def run(db, user):
         follow_ids = follow_ids[:(FOLLOWS_PER_DAY - follows_today)]
         for follow_id in follow_ids:
             follow(db, user, follow_id)
-            # TODO delay = random.uniform(FOLLOW_PERIOD.total_seconds(), DAY.total_seconds() / FOLLOWS_PER_DAY)
-            delay = random.uniform(1, 2) * FOLLOW_PERIOD.total_seconds()
-            log(user, 'sleeping for %.2f seconds', delay)
-            time.sleep(delay)
+            delay = random.uniform(1, 2) * FOLLOW_PERIOD
+            log(user, 'sleeping for %s', delay)
+            time.sleep(delay.total_seconds())
 
 def run_forever(db, user):
     try:
         while True:
             run(db, user)
-            delay = random.uniform(0.1, 0.9) * DAY.total_seconds()
-            log(user, 'sleeping for %.2f seconds', delay)
-            time.sleep(delay)
+            delay = random.uniform(0.1, 0.9) * USER_FOLLOWERS_UPDATE_PERIOD
+            log(user, 'sleeping for %s', delay)
+            time.sleep(delay.total_seconds())
     except requests.exceptions.HTTPError as e:
         log(user, 'http error response: %s', e.response.text, level=logging.ERROR)
         raise e
