@@ -13,12 +13,16 @@ function datify(day_counts) {
 var chart = new Chartist.Line('.ct-chart', {
   series: [
     {
-      name: 'series-1',
+      name: 'follows',
       data: datify(FOLLOW_DAY_COUNTS)
     },
     {
-      name: 'series-2',
+      name: 'unfollows',
       data: datify(UNFOLLOW_DAY_COUNTS)
+    },
+    {
+      name: 'followers',
+      data: datify(FOLLOWER_DAY_COUNTS)
     }
   ]
 }, {

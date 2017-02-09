@@ -55,6 +55,13 @@ def get_twitter_followers_updated_time(cursor, leader_id):
                    ' where leader_id=%s', (leader_id,))
     return cursor.fetchone().min
 
+def get_twitter_follower_day_counts(cursor, leader_id):
+    cursor.execute("select date_trunc('day', added_time) as day, count(*) from twitter_followers"
+                   ' where leader_id=%s'
+                   ' group by day order by day asc',
+                   (leader_id,))
+    return cursor.fetchall()
+
 def get_twitter_follower(cursor, leader_id, follower_id):
     cursor.execute('select * from twitter_followers'
                    ' where leader_id=%s and follower_id=%s', (leader_id, follower_id))
