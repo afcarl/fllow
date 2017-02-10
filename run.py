@@ -36,7 +36,7 @@ def update_leaders(db, user, follower_id):
         twitter = database.get_twitter(cursor, follower_id)
         updated_time = database.get_twitter_leaders_updated_time(cursor, follower_id)
         cutoff_time = database.get_current_time(cursor)
-    log(user, 'maybe updating leaders for %s updated at %s', twitter, updated_time)
+    log(user, 'maybe updating leaders for %s updated at %s', twitter.screen_name, updated_time)
     if updated_time and now() - updated_time < UPDATE_PERIOD:
         return log(user, 'updated too recently')
 
@@ -62,7 +62,7 @@ def update_followers(db, user, leader_id, update_period=UPDATE_PERIOD):
         twitter = database.get_twitter(cursor, leader_id)
         updated_time = database.get_twitter_followers_updated_time(cursor, leader_id)
         cutoff_time = database.get_current_time(cursor)
-    log(user, 'maybe updating followers for %s updated at %s', twitter, updated_time)
+    log(user, 'maybe updating followers for %s updated at %s', twitter.screen_name, updated_time)
     if updated_time and now() - updated_time < update_period:
         return log(user, 'updated too recently')
 
@@ -92,7 +92,7 @@ def unfollow(db, user, leader_id):
         follower = database.get_twitter_follower(cursor, user.twitter_id, leader_id)
         updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
     log(user, 'unfollowing %s followed at %s updated at %s',
-        twitter, user_follow, updated_time)
+        twitter.api_id, user_follow.time if user_follow else None, updated_time)
     if not user_follow:
         return warn(user, 'but they were never followed')
     if user_unfollow:
@@ -108,7 +108,7 @@ def unfollow(db, user, leader_id):
         if e.response.status_code != 404:
             raise e
         return warn(user, 'failed to unfollow %s [%d %s]',
-                    twitter, e.response.status_code, e.response.text)
+                    twitter.api_id, e.response.status_code, e.response.text)
 
     with db, db.cursor() as cursor:
         database.add_user_unfollow(cursor, user.id, leader_id)
@@ -125,7 +125,7 @@ def follow(db, user, leader_id):
         last_follow_time = database.get_user_follows_last_time(cursor, user.id)
         follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
     log(user, 'following %s last followed at %s and %d follows today',
-        twitter, last_follow_time, follows_today)
+        twitter.api_id, last_follow_time, follows_today)
     if user_follow:
         return warn(user, 'but they were already followed at %s', user_follow.time)
     if last_follow_time and now() - last_follow_time < FOLLOW_PERIOD:
@@ -141,7 +141,7 @@ def follow(db, user, leader_id):
             raise e
         # 403 can mean blocked or already following, so we mark as followed
         warn(user, 'marking %s as followed [%d %s]',
-             twitter, e.response.status_code, e.response.text)
+             twitter.api_id, e.response.status_code, e.response.text)
         followed = False
 
     with db, db.cursor() as cursor:
