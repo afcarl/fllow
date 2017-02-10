@@ -134,10 +134,10 @@ def add_user_mentors(cursor, user_id, mentor_ids):
                    ' on conflict (user_id, mentor_id) do nothing',
                    [(user_id, mentor_id) for mentor_id in mentor_ids])
 
-def get_user_mentor_ids(cursor, user_id):
-    cursor.execute('select mentor_id from user_mentors'
-                   ' where user_id=%s', (user_id,))
-    return [row.mentor_id for row in cursor.fetchall()]
+def get_user_mentors(cursor, user_id):
+    cursor.execute('select id, screen_name from user_mentors, twitters'
+                   ' where id = mentor_id and user_id=%s', (user_id,))
+    return cursor.fetchall()
 
 
 # user_follows

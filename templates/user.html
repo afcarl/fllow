@@ -6,6 +6,14 @@
   </head>
   <body>
     <div class="ct-chart ct-perfect-fourth"></div>
+
+    <h4>Mentors</h4>
+    <ul>
+      {% for mentor in mentors %}
+      <li>{{ mentor.screen_name }}</li>
+      {% endfor %}
+    </ul>
+
     <script>
       const FOLLOW_DAY_COUNTS={{ follow_day_counts|tojson }};
       const UNFOLLOW_DAY_COUNTS={{ unfollow_day_counts|tojson }};

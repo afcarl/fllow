@@ -15,11 +15,13 @@ def users():
 def user(screen_name):
     with db, db.cursor() as cursor:
         user = database.get_user(cursor, screen_name)
+        mentors = database.get_user_mentors(cursor, user.id)
         follow_day_counts = database.get_user_follow_day_counts(cursor, user.id)
         unfollow_day_counts = database.get_user_unfollow_day_counts(cursor, user.id)
         follower_day_counts = database.get_twitter_follower_day_counts(cursor, user.twitter_id)
     return flask.render_template(
         'user.html',
+        mentors=mentors,
         follow_day_counts=as_timestamps(follow_day_counts),
         unfollow_day_counts=as_timestamps(unfollow_day_counts),
         follower_day_counts=as_timestamps(follower_day_counts)

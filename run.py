@@ -152,9 +152,9 @@ def follow(db, user, leader_id):
 
 def run(db, user):
     with db, db.cursor() as cursor:
-        mentor_ids = database.get_user_mentor_ids(cursor, user.id)
-    for mentor_id in mentor_ids:
-        update_followers(db, user, mentor_id)
+        mentors = database.get_user_mentors(cursor, user.id)
+    for mentor in mentors:
+        update_followers(db, user, mentor.id)
 
     update_leaders(db, user, user.twitter_id)
     update_followers(db, user, user.twitter_id, update_period=USER_FOLLOWERS_UPDATE_PERIOD)
@@ -180,8 +180,8 @@ def run(db, user):
     with db, db.cursor() as cursor:
         followed_ids = set(database.get_user_follow_leader_ids(cursor, user.id))
         followed_ids |= leader_ids
-        follow_ids = [id for mentor_id in mentor_ids
-                      for id in database.get_twitter_follower_ids(cursor, mentor_id)
+        follow_ids = [id for mentor in mentors
+                      for id in database.get_twitter_follower_ids(cursor, mentor.id)
                       if id not in followed_ids]
         follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
     log(user, 'already has %d follows today', follows_today)
