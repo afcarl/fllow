@@ -7,6 +7,14 @@
   <body>
     <div class="ct-chart ct-perfect-fourth"></div>
 
+    <h4>Average Rates</h4>
+    <ul>
+      <li>{{ follow_rate|int }} follows per day ({{ follow_rate_week|int }} past week)</li>
+      <li>{{ unfollow_rate|int }} unfollows per day ({{ unfollow_rate_week|int }} past week)</li>
+      <li>{{ (follow_rate - unfollow_rate)|int }} retained per day ({{ (follow_rate_week - unfollow_rate_week)|int }} past week)</li>
+      <li>{{ follower_rate|int }} followers per day ({{ follower_rate_week|int }} past week)</li>
+    </ul>
+
     <h4>Mentors</h4>
     <ul>
       {% for mentor in mentors %}
