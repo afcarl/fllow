@@ -12,7 +12,9 @@ import api
 import database
 
 
-FOLLOWS_PER_DAY = 250
+MAX_FOLLOWS_PER_DAY = 250
+MAX_LEADER_RATIO = 1.5
+
 FOLLOW_PERIOD = datetime.timedelta(seconds=5)
 DAY = datetime.timedelta(days=1)
 USER_FOLLOWERS_UPDATE_PERIOD = 0.25 * DAY
@@ -130,7 +132,7 @@ def follow(db, user, leader_id):
         return warn(user, 'but they were already followed at %s', user_follow.time)
     if last_follow_time and now() - last_follow_time < FOLLOW_PERIOD:
         return warn(user, 'but followed too recently')
-    if follows_today >= FOLLOWS_PER_DAY:
+    if follows_today >= MAX_FOLLOWS_PER_DAY:
         return warn(user, 'but too many follows today')
 
     try:
@@ -186,10 +188,15 @@ def run(db, user):
                       for id in database.get_twitter_follower_ids(cursor, mentor.id)
                       if id not in followed_ids]
         follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
-    log(user, 'already has %d follows today', follows_today)
-    if follows_today < FOLLOWS_PER_DAY:
+    log(user, '%d mentor followers remaining', len(follow_ids))
+    log(user, 'leader ratio is %.2f (max %.2f)',
+        len(leader_ids) / len(follower_ids), MAX_LEADER_RATIO)
+    max_follows_today = min(MAX_FOLLOWS_PER_DAY,
+                            len(follower_ids) * MAX_LEADER_RATIO - len(leader_ids))
+    log(user, 'already followed %d of %d today', follows_today, max_follows_today)
+    if follows_today < max_follows_today:
         random.shuffle(follow_ids)
-        follow_ids = follow_ids[:(FOLLOWS_PER_DAY - follows_today)]
+        follow_ids = follow_ids[:(max_follows_today - follows_today)]
         for follow_id in follow_ids:
             follow(db, user, follow_id)
             delay = random.uniform(1, 2) * FOLLOW_PERIOD
