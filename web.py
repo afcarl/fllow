@@ -22,6 +22,8 @@ def user(screen_name):
         unfollow_day_counts = as_timestamps(database.get_user_unfollow_day_counts(cursor, user.id))
         follower_day_counts = as_timestamps(database.get_twitter_follower_day_counts(
             cursor, user.twitter_id))
+        leader_day_counts = as_timestamps(database.get_twitter_leader_day_counts(cursor,
+                                                                                 user.twitter_id))
 
     follow_rate = average_daily_rate(follow_day_counts) or 0
     follow_rate_week = average_daily_rate(follow_day_counts, days=7) or 0
@@ -29,6 +31,8 @@ def user(screen_name):
     unfollow_rate_week = average_daily_rate(unfollow_day_counts, days=7) or 0
     follower_rate = average_daily_rate(follower_day_counts)
     follower_rate_week = average_daily_rate(follower_day_counts, days=7)
+    leader_rate = average_daily_rate(leader_day_counts)
+    leader_rate_week = average_daily_rate(leader_day_counts, days=7)
 
     return flask.render_template('user.html', **locals())
 

@@ -23,6 +23,10 @@ var chart = new Chartist.Line('.ct-chart', {
     {
       name: 'followers',
       data: datify(FOLLOWER_DAY_COUNTS)
+    },
+    {
+      name: 'leaders',
+      data: datify(LEADER_DAY_COUNTS)
     }
   ]
 }, {

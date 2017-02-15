@@ -13,6 +13,7 @@
       <li>{{ unfollow_rate|int }} unfollows per day ({{ unfollow_rate_week|int }} past week)</li>
       <li>{{ (follow_rate - unfollow_rate)|int }} retained per day ({{ (follow_rate_week - unfollow_rate_week)|int }} past week)</li>
       <li>{{ follower_rate|int }} followers per day ({{ follower_rate_week|int }} past week)</li>
+      <li>{{ leader_rate|int }} leaders per day ({{ leader_rate_week|int }} past week)</li>
     </ul>
 
     <h4>Mentors</h4>
@@ -26,6 +27,7 @@
       const FOLLOW_DAY_COUNTS={{ follow_day_counts|tojson }};
       const UNFOLLOW_DAY_COUNTS={{ unfollow_day_counts|tojson }};
       const FOLLOWER_DAY_COUNTS={{ follower_day_counts|tojson }};
+      const LEADER_DAY_COUNTS={{ leader_day_counts|tojson }};
     </script>
     <script src="/static/user.js"></script>
   </body>
