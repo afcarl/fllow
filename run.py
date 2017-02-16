@@ -193,7 +193,7 @@ def run(db, user):
     log(user, 'leader ratio is %.2f (max %.2f)',
         len(leader_ids) / len(follower_ids), MAX_LEADER_RATIO)
     max_follows_today = min(MAX_FOLLOWS_PER_DAY,
-                            len(follower_ids) * MAX_LEADER_RATIO - len(leader_ids))
+                            int(len(follower_ids) * MAX_LEADER_RATIO) - len(leader_ids))
     log(user, 'already followed %d of %d today', follows_today, max_follows_today)
     if follows_today < max_follows_today:
         follow_ids = list(follow_ids)
