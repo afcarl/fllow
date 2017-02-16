@@ -182,6 +182,7 @@ def run(db, user):
         unfollow(db, user, unfollow_id)
 
     with db, db.cursor() as cursor:
+        leader_ids = set(database.get_twitter_leader_ids(cursor, user.twitter_id))
         followed_ids = set(database.get_user_follow_leader_ids(cursor, user.id))
         followed_ids |= leader_ids
         follow_ids = {id for mentor in mentors
