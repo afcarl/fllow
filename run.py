@@ -184,9 +184,9 @@ def run(db, user):
     with db, db.cursor() as cursor:
         followed_ids = set(database.get_user_follow_leader_ids(cursor, user.id))
         followed_ids |= leader_ids
-        follow_ids = [id for mentor in mentors
+        follow_ids = {id for mentor in mentors
                       for id in database.get_twitter_follower_ids(cursor, mentor.id)
-                      if id not in followed_ids]
+                      if id not in followed_ids}
         follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
     log(user, '%d mentor followers remaining', len(follow_ids))
     log(user, 'leader ratio is %.2f (max %.2f)',
@@ -195,6 +195,7 @@ def run(db, user):
                             len(follower_ids) * MAX_LEADER_RATIO - len(leader_ids))
     log(user, 'already followed %d of %d today', follows_today, max_follows_today)
     if follows_today < max_follows_today:
+        follow_ids = list(follow_ids)
         random.shuffle(follow_ids)
         follow_ids = follow_ids[:(max_follows_today - follows_today)]
         for follow_id in follow_ids:
