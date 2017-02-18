@@ -191,9 +191,8 @@ def run(db, user):
                       if id not in followed_ids}
         follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
     log(user, '%d mentor followers remaining', len(follow_ids))
-    log(user, 'leader ratio is %.2f (max %.2f)',
-        len(leader_ids) / len(follower_ids), MAX_LEADER_RATIO)
     max_leaders = int(len(follower_ids) * MAX_LEADER_RATIO) + EXTRA_LEADERS
+    log(user, '%d currently followed (max %d)', len(leader_ids), max_leaders)
     max_follows_today = min(MAX_FOLLOWS_PER_DAY, max_leaders - len(leader_ids))
     log(user, 'already followed %d of %d today', follows_today, max_follows_today)
     if follows_today < max_follows_today:
