@@ -14,6 +14,7 @@ import database
 
 MAX_FOLLOWS_PER_DAY = 250
 MAX_LEADER_RATIO = 1.5
+EXTRA_LEADERS = 100
 
 FOLLOW_PERIOD = datetime.timedelta(seconds=5)
 DAY = datetime.timedelta(days=1)
@@ -192,8 +193,8 @@ def run(db, user):
     log(user, '%d mentor followers remaining', len(follow_ids))
     log(user, 'leader ratio is %.2f (max %.2f)',
         len(leader_ids) / len(follower_ids), MAX_LEADER_RATIO)
-    max_follows_today = min(MAX_FOLLOWS_PER_DAY,
-                            int(len(follower_ids) * MAX_LEADER_RATIO) - len(leader_ids))
+    max_leaders = int(len(follower_ids) * MAX_LEADER_RATIO) + EXTRA_LEADERS
+    max_follows_today = min(MAX_FOLLOWS_PER_DAY, max_leaders - len(leader_ids))
     log(user, 'already followed %d of %d today', follows_today, max_follows_today)
     if follows_today < max_follows_today:
         follow_ids = list(follow_ids)
