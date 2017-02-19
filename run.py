@@ -193,13 +193,14 @@ def run(db, user):
     log(user, '%d mentor followers remaining', len(follow_ids))
     max_leaders = int(len(follower_ids) * MAX_LEADER_RATIO) + EXTRA_LEADERS
     log(user, '%d currently followed (max %d)', len(leader_ids), max_leaders)
-    max_follows_today = min(MAX_FOLLOWS_PER_DAY, max_leaders - len(leader_ids))
-    log(user, 'already followed %d of %d today', follows_today, max_follows_today)
-    if follows_today < max_follows_today:
+    log(user, '%d already followed today (max %d)', follows_today, MAX_FOLLOWS_PER_DAY)
+    remaining_follows_today = min(max_leaders - len(leader_ids),
+                                  MAX_FOLLOWS_PER_DAY - follows_today)
+    log(user, '%d remaining follows today', remaining_follows_today)
+    if remaining_follows_today > 0:
         follow_ids = list(follow_ids)
         random.shuffle(follow_ids)
-        follow_ids = follow_ids[:(max_follows_today - follows_today)]
-        for follow_id in follow_ids:
+        for follow_id in follow_ids[:remaining_follows_today]:
             follow(db, user, follow_id)
             delay = random.uniform(1, 2) * FOLLOW_PERIOD
             log(user, 'sleeping for %s', delay)
