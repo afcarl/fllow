@@ -20,8 +20,8 @@ def user(screen_name):
         mentors = database.get_user_mentors(cursor, user.id)
         follow_day_counts = as_timestamps(database.get_user_follow_day_counts(cursor, user.id))
         unfollow_day_counts = as_timestamps(database.get_user_unfollow_day_counts(cursor, user.id))
-        follower_day_counts = as_timestamps(database.get_twitter_follower_day_counts(
-            cursor, user.twitter_id))
+        follower_day_counts = as_timestamps(database.get_twitter_follower_day_counts(cursor,
+                                                                                     user.twitter_id))
         leader_day_counts = as_timestamps(database.get_twitter_leader_day_counts(cursor,
                                                                                  user.twitter_id))
 
