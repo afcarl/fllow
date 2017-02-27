@@ -12,7 +12,7 @@ import api
 import database
 
 
-MAX_FOLLOWS_PER_DAY = 250
+MAX_FOLLOWS_PER_DAY = 300
 MAX_LEADER_RATIO = 1.5
 EXTRA_LEADERS = 100
 
