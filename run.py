@@ -214,7 +214,7 @@ def run_forever(db, user):
             log(user, 'sleeping for %s', delay)
             time.sleep(delay.total_seconds())
     except requests.exceptions.HTTPError as e:
-        log(user, 'http error response: %s', e.response.text, level=logging.ERROR)
+        log(user, 'http error %d: %s', e.response.status_code, e.response.text, level=logging.ERROR)
         raise e
 
 
