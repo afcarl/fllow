@@ -1,3 +1,4 @@
+import datetime
 import logging
 import time
 
@@ -8,6 +9,7 @@ import secret
 
 
 CONSUMER_KEY = '9QswJgHJg1w1IzyVklleqS9Wb'
+RETRY_PERIOD = datetime.timedelta(minutes=1)
 
 session = requests  # requests.Session() keep-alive seems to die eventually :/
 
@@ -45,6 +47,10 @@ def request(method, user, path, retry=True, **params):
                      sleep_time)
         time.sleep(sleep_time)
         return request(method, user, path, retry=False, **params)
+    elif response.status_code >= 500:
+        logging.warn('internal twitter error %d: %s', response.status_code, response.text)
+        logging.warn('sleeping for %s', RETRY_PERIOD)
+        time.sleep(RETRY_PERIOD.total_seconds())
 
     response.raise_for_status()
     return response.json()
