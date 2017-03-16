@@ -8,6 +8,8 @@ import database
 import secret
 
 
+HOST = 'https://fllow.x.st'
+
 User = collections.namedtuple('User', ('access_token', 'access_token_secret'))
 
 app = flask.Flask(__name__)
@@ -19,7 +21,7 @@ db = database.connect()
 @app.route('/authorize')
 def authorize():
     if 'oauth_token' not in flask.request.args:
-        request_token = api.get_request_token(flask.request.url)
+        request_token = api.get_request_token(HOST + flask.url_for('authorize'))
         return flask.redirect(api.get_authorize_url(request_token['oauth_token']))
 
     access_token = api.get_access_token(flask.request.args['oauth_token'],
@@ -32,7 +34,7 @@ def authorize():
         database.update_user(cursor, twitter_id, user.access_token, user.access_token_secret)
 
     flask.session['screen_name'] = user_data['screen_name']
-    return flask.redirect(flask.url_for('user', screen_name=user_data['screen_name']))
+    return flask.redirect(flask.url_for('user_mentors', screen_name=user_data['screen_name']))
 
 
 @app.route('/users')
