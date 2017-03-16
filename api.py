@@ -21,10 +21,9 @@ def get_request_token():
 def get_authorize_url(request_token):
     return 'https://api.twitter.com/oauth/authorize?oauth_token=' + request_token
 
-def get_access_token(request_token, request_token_secret, pin):
-    return (requests_oauthlib.OAuth1Session(CONSUMER_KEY, secret.CONSUMER_SECRET,
-                                            request_token, request_token_secret,
-                                            verifier=pin)
+def get_access_token(request_token, verifier):
+    return (requests_oauthlib.OAuth1Session(CONSUMER_KEY, secret.CONSUMER_SECRET, request_token,
+                                            verifier=verifier)
             .fetch_access_token('https://api.twitter.com/oauth/access_token'))
 
 def get(user, path, **params):
