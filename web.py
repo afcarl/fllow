@@ -41,11 +41,34 @@ def users():
         users = database.get_users(cursor)
     return flask.render_template('users.html', users=users)
 
-@app.route('/users/<screen_name>')
-def user(screen_name):
+
+@app.route('/users/<screen_name>/mentors', methods=('GET', 'POST'))
+def user_mentors(screen_name):
+    logged_in = flask.session.get('screen_name') == screen_name
+
     with db, db.cursor() as cursor:
         user = database.get_user(cursor, screen_name)
+
+    if flask.request.method == 'POST':
+        if not logged_in:
+            flask.abort(403)
+
+        mentor_data = api.get(user, 'users/lookup', screen_name=flask.request.form['screen_name'])
+
+        with db, db.cursor() as cursor:
+            twitter_ids = database.update_twitters(cursor, mentor_data)
+            database.add_user_mentors(cursor, user.id, twitter_ids)
+
+    with db, db.cursor() as cursor:
         mentors = database.get_user_mentors(cursor, user.id)
+
+    return flask.render_template('user_mentors.html', logged_in=logged_in, mentors=mentors)
+
+
+@app.route('/users/<screen_name>/statistics')
+def user_statistics(screen_name):
+    with db, db.cursor() as cursor:
+        user = database.get_user(cursor, screen_name)
         follow_day_counts = as_timestamps(database.get_user_follow_day_counts(cursor, user.id))
         unfollow_day_counts = as_timestamps(database.get_user_unfollow_day_counts(cursor, user.id))
         follower_day_counts = as_timestamps(database.get_twitter_follower_day_counts(cursor,
@@ -62,7 +85,8 @@ def user(screen_name):
     leader_rate = average_daily_rate(leader_day_counts)
     leader_rate_week = average_daily_rate(leader_day_counts, days=7)
 
-    return flask.render_template('user.html', **locals())
+    return flask.render_template('user_statistics.html', **locals())
+
 
 def as_timestamps(day_counts):
     return [(day.timestamp(), count) for day, count in day_counts]

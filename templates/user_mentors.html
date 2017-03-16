@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+  <body>
+    <ul>
+      {% for mentor in mentors %}
+      <li>{{ mentor.screen_name }}</li>
+      {% endfor %}
+      <li>
+        {% if logged_in %}
+        <form method="POST"><input type="text" name="screen_name"><input type="submit" value="Add"></form>
+        {% else %}
+        To add mentors, <a href="{{ url_for('authorize') }}">log in</a>.
+        {% endif %}
+      </li>
+    </ul>
+  </body>
+</html>

@@ -2,7 +2,10 @@
   <body>
     <ul>
       {% for user in users %}
-      <li><a href="{{ url_for('user', screen_name=user.screen_name) }}">{{ user.screen_name }}</a></li>
+      <li>{{ user.screen_name }}
+        <a href="{{ url_for('user_mentors', screen_name=user.screen_name) }}">mentors</a>
+        <a href="{{ url_for('user_statistics', screen_name=user.screen_name) }}">statistics</a>
+      </li>
       {% endfor %}
     </ul>
   </body>
