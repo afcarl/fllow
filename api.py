@@ -13,10 +13,10 @@ RETRY_PERIOD = datetime.timedelta(minutes=1)
 
 session = requests  # requests.Session() keep-alive seems to die eventually :/
 
-def get_request_token():
+def get_request_token(callback='oob'):
     return (requests_oauthlib.OAuth1Session(CONSUMER_KEY, secret.CONSUMER_SECRET)
             .fetch_request_token('https://api.twitter.com/oauth/request_token',
-                                 params=dict(oauth_callback='oob')))
+                                 params=dict(oauth_callback=callback)))
 
 def get_authorize_url(request_token):
     return 'https://api.twitter.com/oauth/authorize?oauth_token=' + request_token

@@ -1,11 +1,39 @@
+import collections
 import statistics
 
 import flask
 
+import api
 import database
+import secret
+
+
+User = collections.namedtuple('User', ('access_token', 'access_token_secret'))
 
 app = flask.Flask(__name__)
+app.secret_key = secret.APP_SECRET
+
 db = database.connect()
+
+
+@app.route('/authorize')
+def authorize():
+    if 'oauth_token' not in flask.request.args:
+        request_token = api.get_request_token(flask.request.url)
+        return flask.redirect(api.get_authorize_url(request_token['oauth_token']))
+
+    access_token = api.get_access_token(flask.request.args['oauth_token'],
+                                        flask.request.args['oauth_verifier'])
+    user = User(access_token['oauth_token'], access_token['oauth_token_secret'])
+    user_data = api.get(user, 'account/verify_credentials')
+
+    with db, db.cursor() as cursor:
+        twitter_id, = database.update_twitters(cursor, [user_data])
+        database.update_user(cursor, twitter_id, user.access_token, user.access_token_secret)
+
+    flask.session['screen_name'] = user_data['screen_name']
+    return flask.redirect(flask.url_for('user', screen_name=user_data['screen_name']))
+
 
 @app.route('/users')
 def users():

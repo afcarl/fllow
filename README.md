@@ -8,8 +8,8 @@
     docker network create fllow
     docker run --name db --net fllow --volumes-from db-data --restart always -d postgres
     docker run --rm --net fllow -i postgres psql -h db -U postgres < database.sql
-    
-### Insert Consumer Key and Secret
+
+### Insert Consumer Key and Secrets
 
 Get a consumer key and secret from https://apps.twitter.com/
 
@@ -17,8 +17,9 @@ Update `CONSUMER_KEY` in `run.py`
 
 Create the file `secret/__init__.py` with the contents:
 
+    APP_SECRET = '<whatever-you-want>'  # for signing flask session cookies
     CONSUMER_SECRET = '<your-consumer-secret>'
-    
+
 ### Run Fllow
 
     docker build --pull --tag fllow .
