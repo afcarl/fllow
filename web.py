@@ -102,4 +102,4 @@ def average_daily_rate(day_counts, days=None):
         return statistics.mean(counts)
 
 
-app.run(host='0.0.0.0', debug=True)
+app.run(host='0.0.0.0')
