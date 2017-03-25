@@ -50,6 +50,7 @@ def request(method, user, path, retry=True, **params):
         logging.warn('internal twitter error %d: %s', response.status_code, response.text)
         logging.warn('sleeping for %s', RETRY_PERIOD)
         time.sleep(RETRY_PERIOD.total_seconds())
+        return request(method, user, path, **params)
 
     response.raise_for_status()
     return response.json()
