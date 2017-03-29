@@ -1,4 +1,4 @@
-import pprint
+import json
 import sys
 
 import api
@@ -11,7 +11,9 @@ def main(user, path, params):
     with db, db.cursor() as cursor:
         user = database.get_user(cursor, user)
 
-    pprint.pprint(api.get(user, path, **params))
+    data = api.get(user, path, **params)
+
+    print(json.dumps(data, indent=2))
 
 
 if __name__ == '__main__':
