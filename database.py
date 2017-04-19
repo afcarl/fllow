@@ -149,14 +149,10 @@ def get_user_mentors(cursor, user_id):
 
 # user_follows
 
-def get_user_follow_leader_ids(cursor, user_id, before=None):
-    sql = 'select leader_id from user_follows where user_id=%s'
-    values = [user_id]
-    if before:
-        sql += ' and time < %s'
-        values += [before]
-    cursor.execute(sql, values)
-    return [row.leader_id for row in cursor.fetchall()]
+def get_user_follows(cursor, user_id):
+    cursor.execute('select leader_id, time from user_follows'
+                   ' where user_id=%s', (user_id,))
+    return cursor.fetchall()
 
 def get_user_follow_day_counts(cursor, user_id):
     cursor.execute("select date_trunc('day', time) as day, count(*) from user_follows"

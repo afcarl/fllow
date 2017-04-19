@@ -20,7 +20,8 @@ FOLLOW_PERIOD = datetime.timedelta(seconds=5)
 DAY = datetime.timedelta(days=1)
 USER_FOLLOWERS_UPDATE_PERIOD = 0.25 * DAY
 UPDATE_PERIOD = 2 * DAY
-UNFOLLOW_PERIOD = 2 * DAY
+UNFOLLOW_LEADERS_PERIOD = 2 * DAY
+UNFOLLOW_FOLLOWERS_PERIOD = 28 * DAY
 
 
 def now():
@@ -100,10 +101,10 @@ def unfollow(db, user, leader_id):
         return warn(user, 'but they were never followed')
     if user_unfollow:
         return warn(user, 'but they were already unfollowed at %s', user_unfollow.time)
-    if follower:
-        return warn(user, 'but they followed back at %s', follower.added_time)
-    if not updated_time or (updated_time - user_follow.time < UNFOLLOW_PERIOD):
+    if updated_time - user_follow.time < UNFOLLOW_LEADERS_PERIOD:
         return warn(user, 'but they were followed too recently')
+    if follower and now() - user_follow.time < UNFOLLOW_FOLLOWERS_PERIOD:
+        return warn(user, 'but they were followed too recently for someone who followed back')
 
     try:
         api.post(user, 'friendships/destroy', user_id=twitter.api_id)
@@ -166,17 +167,30 @@ def run(db, user):
         leader_ids = set(database.get_twitter_leader_ids(cursor, user.twitter_id))
         follower_ids = set(database.get_twitter_follower_ids(cursor, user.twitter_id))
         updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
-        before = updated_time - UNFOLLOW_PERIOD
         unfollowed_ids = set(database.get_user_unfollow_leader_ids(cursor, user.id))
-        unfollow_ids = set(database.get_user_follow_leader_ids(cursor, user.id, before=before))
+        follows = database.get_user_follow_leader_ids(cursor, user.id)
     log(user, '%d followers, updated at %s', len(follower_ids), updated_time)
     log(user, '%d currently followed', len(leader_ids))
     log(user, '%d unfollowed', len(unfollowed_ids))
-    log(user, '%d followed before %s', len(unfollow_ids), before)
+    log(user, '%d followed', len(follows))
+
+    unfollow_followers_before = now() - UNFOLLOW_FOLLOWERS_PERIOD
+    unfollow_ids = {f.leader_id for f in follows
+                    if f.time < unfollow_followers_before}
+    log(user, '…of whom %d were followed before %s', len(unfollow_ids), unfollow_followers_before)
+
+    unfollow_leaders_before = updated_time - UNFOLLOW_LEADERS_PERIOD
+    unfollow_leader_ids = {f.leader_id for f in follows
+                           if f.time < unfollow_leaders_before} - follower_ids
+    log(user, '…and %d were followed before %s and have not followed back',
+        len(unfollow_leader_ids - unfollow_ids), unfollow_leaders_before)
+
+    unfollow_ids |= unfollow_leader_ids
+    log(user, '…for a total of %d follows', len(unfollow_ids))
+
     unfollow_ids &= leader_ids  # don't unfollow people we aren't following
     log(user, '…of whom %d are still followed', len(unfollow_ids))
-    unfollow_ids -= follower_ids  # don't unfollow people who followed back
-    log(user, '…of whom %d have not followed back', len(unfollow_ids))
+
     unfollow_ids -= unfollowed_ids  # don't unfollow if we already unfollowed
     log(user, '…of whom %d have not already been unfollowed', len(unfollow_ids))
     for unfollow_id in unfollow_ids:
@@ -184,7 +198,7 @@ def run(db, user):
 
     with db, db.cursor() as cursor:
         leader_ids = set(database.get_twitter_leader_ids(cursor, user.twitter_id))
-        followed_ids = set(database.get_user_follow_leader_ids(cursor, user.id))
+        followed_ids = {f.leader_id for f in follows}
         followed_ids |= leader_ids
         follow_ids = {id for mentor in mentors
                       for id in database.get_twitter_follower_ids(cursor, mentor.id)
