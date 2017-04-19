@@ -25,6 +25,8 @@ def get_twitter(cursor, twitter_id):
     return cursor.fetchone()
 
 def update_twitters(cursor, api_twitters):
+    if not api_twitters:
+        return set()
     cursor.execute('insert into twitters (api_id, screen_name) values '
                    + ','.join('%s' for _ in api_twitters) +
                    ' on conflict (api_id)'
@@ -34,6 +36,8 @@ def update_twitters(cursor, api_twitters):
     return {row.id for row in cursor.fetchall()}
 
 def add_twitter_api_ids(cursor, api_ids):
+    if not api_ids:
+        return set()
     # note that you can't use "do nothing" and "returning", so we do a meaningless update:
     cursor.execute('insert into twitters (api_id) values '
                    + ','.join('(%s)' for _ in api_ids) +
@@ -68,6 +72,8 @@ def get_twitter_follower(cursor, leader_id, follower_id):
     return cursor.fetchone()
 
 def update_twitter_followers(cursor, leader_id, follower_ids):
+    if not follower_ids:
+        return
     cursor.execute('insert into twitter_followers (leader_id, follower_id) values '
                    + ','.join('%s' for _ in follower_ids) +
                    ' on conflict (leader_id, follower_id) do update set updated_time=now()',
@@ -99,6 +105,8 @@ def get_twitter_leader_day_counts(cursor, follower_id):
     return cursor.fetchall()
 
 def update_twitter_leaders(cursor, follower_id, leader_ids):
+    if not leader_ids:
+        return
     cursor.execute('insert into twitter_followers (leader_id, follower_id) values '
                    + ','.join('%s' for _ in leader_ids) +
                    ' on conflict (leader_id, follower_id) do update set updated_time=now()',
@@ -136,6 +144,8 @@ def update_user(cursor, twitter_id, access_token, access_token_secret):
 # user_mentors
 
 def add_user_mentors(cursor, user_id, mentor_ids):
+    if not mentor_ids:
+        return
     cursor.execute('insert into user_mentors (user_id, mentor_id) values '
                    + ','.join('%s' for _ in mentor_ids) +
                    ' on conflict (user_id, mentor_id) do nothing',
