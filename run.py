@@ -36,8 +36,8 @@ def warn(user, message, *args):
 
 def get_keeper_ids(db, user, retry=True):
     try:
-        data = api.get(user, 'lists/members', slug='fllow-keepers', owner_screen_name=user.screen_name,
-                       count=5000, skip_status=True)
+        data = api.get(user, 'lists/members', slug='fllow-keepers',
+                       owner_screen_name=user.screen_name, count=5000, skip_status=True)
     except requests.exceptions.HTTPError as e:
         warn(user, 'fllow-keepers list not found')
         if e.response.status_code == 404 and retry:
