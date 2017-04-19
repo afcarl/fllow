@@ -34,7 +34,7 @@ def warn(user, message, *args):
     log(user, message, *args, level=logging.WARNING)
 
 
-def get_keeper_ids(user, retry=True):
+def get_keeper_ids(db, user, retry=True):
     try:
         data = api.get(user, 'lists/members', slug='fllow-keepers', owner_screen_name=user.screen_name,
                        count=5000, skip_status=True)
@@ -43,10 +43,11 @@ def get_keeper_ids(user, retry=True):
         if e.response.status_code == 404 and retry:
             api.post(user, 'lists/create', name='fllow keepers', mode='private',
                      description='fllow will not unfollow users in this list')
-            return get_keeper_ids(user, retry=False)
+            return get_keeper_ids(db, user, retry=False)
         raise e
 
-    return {user['id'] for user in data['users']}
+    with db, db.cursor() as cursor:
+        return database.add_twitter_api_ids(cursor, [user['id'] for user in data['users']])
 
 
 def update_leaders(db, user, follower_id):
@@ -170,7 +171,7 @@ def follow(db, user, leader_id):
 
 
 def run(db, user):
-    keeper_ids = get_keeper_ids(user)
+    keeper_ids = get_keeper_ids(db, user)
     log(user, '%d keepers', len(keeper_ids))
 
     with db, db.cursor() as cursor:
@@ -182,10 +183,10 @@ def run(db, user):
     update_followers(db, user, user.twitter_id, update_period=USER_FOLLOWERS_UPDATE_PERIOD)
 
     with db, db.cursor() as cursor:
-        leader_ids = set(database.get_twitter_leader_ids(cursor, user.twitter_id))
-        follower_ids = set(database.get_twitter_follower_ids(cursor, user.twitter_id))
+        leader_ids = database.get_twitter_leader_ids(cursor, user.twitter_id)
+        follower_ids = database.get_twitter_follower_ids(cursor, user.twitter_id)
         updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
-        unfollowed_ids = set(database.get_user_unfollow_leader_ids(cursor, user.id))
+        unfollowed_ids = database.get_user_unfollow_leader_ids(cursor, user.id)
         follows = database.get_user_follows(cursor, user.id)
     log(user, '%d followers, updated at %s', len(follower_ids), updated_time)
     log(user, '%d currently followed', len(leader_ids))
@@ -219,7 +220,7 @@ def run(db, user):
         unfollow(db, user, unfollow_id)
 
     with db, db.cursor() as cursor:
-        leader_ids = set(database.get_twitter_leader_ids(cursor, user.twitter_id))
+        leader_ids = database.get_twitter_leader_ids(cursor, user.twitter_id)
         followed_ids = {f.leader_id for f in follows}
         followed_ids |= leader_ids
         follow_ids = {id for mentor in mentors

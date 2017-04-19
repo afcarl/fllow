@@ -31,7 +31,7 @@ def update_twitters(cursor, api_twitters):
                    ' do update set screen_name=excluded.screen_name, updated_time=now()'
                    ' returning id',
                    [(t['id'], t['screen_name']) for t in api_twitters])
-    return [row.id for row in cursor.fetchall()]
+    return {row.id for row in cursor.fetchall()}
 
 def add_twitter_api_ids(cursor, api_ids):
     # note that you can't use "do nothing" and "returning", so we do a meaningless update:
@@ -40,7 +40,7 @@ def add_twitter_api_ids(cursor, api_ids):
                    ' on conflict (api_id) do update set id=twitters.id'
                    ' returning id',
                    api_ids)
-    return [row.id for row in cursor.fetchall()]
+    return {row.id for row in cursor.fetchall()}
 
 
 # twitter_followers
@@ -48,7 +48,7 @@ def add_twitter_api_ids(cursor, api_ids):
 def get_twitter_follower_ids(cursor, leader_id):
     cursor.execute('select follower_id from twitter_followers'
                    ' where leader_id=%s', (leader_id,))
-    return [row.follower_id for row in cursor.fetchall()]
+    return {row.follower_id for row in cursor.fetchall()}
 
 def get_twitter_followers_updated_time(cursor, leader_id):
     cursor.execute('select min(updated_time) from twitter_followers'
@@ -84,7 +84,7 @@ def delete_old_twitter_followers(cursor, leader_id, before):
 def get_twitter_leader_ids(cursor, follower_id):
     cursor.execute('select leader_id from twitter_followers'
                    ' where follower_id=%s', (follower_id,))
-    return [row.leader_id for row in cursor.fetchall()]
+    return {row.leader_id for row in cursor.fetchall()}
 
 def get_twitter_leaders_updated_time(cursor, follower_id):
     cursor.execute('select min(updated_time) from twitter_followers'
@@ -186,7 +186,7 @@ def add_user_follow(cursor, user_id, leader_id):
 def get_user_unfollow_leader_ids(cursor, user_id):
     cursor.execute('select leader_id from user_unfollows'
                    ' where user_id=%s', (user_id,))
-    return [row.leader_id for row in cursor.fetchall()]
+    return {row.leader_id for row in cursor.fetchall()}
 
 def get_user_unfollow_day_counts(cursor, user_id):
     cursor.execute("select date_trunc('day', time) as day, count(*) from user_unfollows"
