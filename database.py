@@ -12,17 +12,26 @@ def connect():
     return psycopg2.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD,
                             cursor_factory=psycopg2.extras.NamedTupleCursor)
 
-def get_current_time(cursor):
-    cursor.execute('select now()')
-    return cursor.fetchone().now
-
 
 # twitters
 
 def get_twitter(cursor, twitter_id):
-    cursor.execute('select id, api_id, screen_name from twitters'
+    cursor.execute('select id, api_id, screen_name, followers_updated_time, leaders_updated_time'
+                   ' from twitters'
                    ' where id=%s', [twitter_id])
     return cursor.fetchone()
+
+def update_twitter_followers_updated_time(cursor, leader_id, time):
+    cursor.execute('update twitters'
+                   ' set followers_updated_time=%s'
+                   ' where id=%s',
+                   (time, leader_id))
+
+def update_twitter_leaders_updated_time(cursor, follower_id, time):
+    cursor.execute('update twitters'
+                   ' set leaders_updated_time=%s'
+                   ' where id=%s',
+                   (time, follower_id))
 
 def update_twitters(cursor, api_twitters):
     if not api_twitters:
@@ -53,11 +62,6 @@ def get_twitter_follower_ids(cursor, leader_id):
     cursor.execute('select follower_id from twitter_followers'
                    ' where leader_id=%s', [leader_id])
     return {row.follower_id for row in cursor.fetchall()}
-
-def get_twitter_followers_updated_time(cursor, leader_id):
-    cursor.execute('select min(updated_time) from twitter_followers'
-                   ' where leader_id=%s', [leader_id])
-    return cursor.fetchone().min
 
 def get_twitter_follower_day_counts(cursor, leader_id):
     cursor.execute("select date_trunc('day', added_time) as day, count(*) from twitter_followers"
@@ -91,11 +95,6 @@ def get_twitter_leader_ids(cursor, follower_id):
     cursor.execute('select leader_id from twitter_followers'
                    ' where follower_id=%s', [follower_id])
     return {row.leader_id for row in cursor.fetchall()}
-
-def get_twitter_leaders_updated_time(cursor, follower_id):
-    cursor.execute('select min(updated_time) from twitter_followers'
-                   ' where follower_id=%s', [follower_id])
-    return cursor.fetchone().min
 
 def get_twitter_leader_day_counts(cursor, follower_id):
     cursor.execute("select date_trunc('day', added_time) as day, count(*) from twitter_followers"

@@ -2,7 +2,9 @@ create table twitters (
     id serial primary key,
     api_id bigint unique not null,
     screen_name text unique check (screen_name != ''),
-    updated_time timestamptz not null default now()
+    updated_time timestamptz not null default now(),
+    followers_updated_time timestamptz,
+    leaders_updated_time timestamptz
 );
 
 create table twitter_followers (
