@@ -21,7 +21,7 @@ def get_current_time(cursor):
 
 def get_twitter(cursor, twitter_id):
     cursor.execute('select id, api_id, screen_name from twitters'
-                   ' where id=%s', (twitter_id,))
+                   ' where id=%s', [twitter_id])
     return cursor.fetchone()
 
 def update_twitters(cursor, api_twitters):
@@ -47,19 +47,19 @@ def add_twitter_api_ids(cursor, api_ids):
 
 def get_twitter_follower_ids(cursor, leader_id):
     cursor.execute('select follower_id from twitter_followers'
-                   ' where leader_id=%s', (leader_id,))
+                   ' where leader_id=%s', [leader_id])
     return {row.follower_id for row in cursor.fetchall()}
 
 def get_twitter_followers_updated_time(cursor, leader_id):
     cursor.execute('select min(updated_time) from twitter_followers'
-                   ' where leader_id=%s', (leader_id,))
+                   ' where leader_id=%s', [leader_id])
     return cursor.fetchone().min
 
 def get_twitter_follower_day_counts(cursor, leader_id):
     cursor.execute("select date_trunc('day', added_time) as day, count(*) from twitter_followers"
                    ' where leader_id=%s'
                    ' group by day order by day asc',
-                   (leader_id,))
+                   [leader_id])
     return cursor.fetchall()
 
 def get_twitter_follower(cursor, leader_id, follower_id):
@@ -83,19 +83,19 @@ def delete_old_twitter_followers(cursor, leader_id, before):
 
 def get_twitter_leader_ids(cursor, follower_id):
     cursor.execute('select leader_id from twitter_followers'
-                   ' where follower_id=%s', (follower_id,))
+                   ' where follower_id=%s', [follower_id])
     return {row.leader_id for row in cursor.fetchall()}
 
 def get_twitter_leaders_updated_time(cursor, follower_id):
     cursor.execute('select min(updated_time) from twitter_followers'
-                   ' where follower_id=%s', (follower_id,))
+                   ' where follower_id=%s', [follower_id])
     return cursor.fetchone().min
 
 def get_twitter_leader_day_counts(cursor, follower_id):
     cursor.execute("select date_trunc('day', added_time) as day, count(*) from twitter_followers"
                    ' where follower_id=%s'
                    ' group by day order by day asc',
-                   (follower_id,))
+                   [follower_id])
     return cursor.fetchall()
 
 def update_twitter_leaders(cursor, follower_id, leader_ids):
@@ -120,7 +120,7 @@ def get_users(cursor):
 def get_user(cursor, screen_name):
     cursor.execute('select users.id, twitter_id, access_token, access_token_secret, screen_name'
                    ' from users, twitters'
-                   ' where twitter_id=twitters.id and screen_name=%s', (screen_name,))
+                   ' where twitter_id=twitters.id and screen_name=%s', [screen_name])
     return cursor.fetchone()
 
 def update_user(cursor, twitter_id, access_token, access_token_secret):
@@ -143,7 +143,7 @@ def add_user_mentors(cursor, user_id, mentor_ids):
 
 def get_user_mentors(cursor, user_id):
     cursor.execute('select id, screen_name from user_mentors, twitters'
-                   ' where id = mentor_id and user_id=%s', (user_id,))
+                   ' where id = mentor_id and user_id=%s', [user_id])
     return cursor.fetchall()
 
 
@@ -151,14 +151,14 @@ def get_user_mentors(cursor, user_id):
 
 def get_user_follows(cursor, user_id):
     cursor.execute('select leader_id, time from user_follows'
-                   ' where user_id=%s', (user_id,))
+                   ' where user_id=%s', [user_id])
     return cursor.fetchall()
 
 def get_user_follow_day_counts(cursor, user_id):
     cursor.execute("select date_trunc('day', time) as day, count(*) from user_follows"
                    ' where user_id=%s'
                    ' group by day order by day asc',
-                   (user_id,))
+                   [user_id])
     return cursor.fetchall()
 
 def get_user_follows_count(cursor, user_id, since):
@@ -168,7 +168,7 @@ def get_user_follows_count(cursor, user_id, since):
 
 def get_user_follows_last_time(cursor, user_id):
     cursor.execute('select max(time) from user_follows'
-                   ' where user_id=%s', (user_id,))
+                   ' where user_id=%s', [user_id])
     return cursor.fetchone().max
 
 def get_user_follow(cursor, user_id, leader_id):
@@ -185,14 +185,14 @@ def add_user_follow(cursor, user_id, leader_id):
 
 def get_user_unfollow_leader_ids(cursor, user_id):
     cursor.execute('select leader_id from user_unfollows'
-                   ' where user_id=%s', (user_id,))
+                   ' where user_id=%s', [user_id])
     return {row.leader_id for row in cursor.fetchall()}
 
 def get_user_unfollow_day_counts(cursor, user_id):
     cursor.execute("select date_trunc('day', time) as day, count(*) from user_unfollows"
                    ' where user_id=%s'
                    ' group by day order by day asc',
-                   (user_id,))
+                   [user_id])
     return cursor.fetchall()
 
 def get_user_unfollow(cursor, user_id, leader_id):

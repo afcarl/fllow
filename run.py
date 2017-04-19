@@ -167,7 +167,7 @@ def follow(db, user, leader_id):
     with db, db.cursor() as cursor:
         database.add_user_follow(cursor, user.id, leader_id)
         if followed:
-            database.update_twitter_followers(cursor, leader_id, (user.twitter_id,))
+            database.update_twitter_followers(cursor, leader_id, [user.twitter_id])
 
 
 def run(db, user):
