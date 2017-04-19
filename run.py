@@ -34,6 +34,21 @@ def warn(user, message, *args):
     log(user, message, *args, level=logging.WARNING)
 
 
+def get_keeper_ids(user, retry=True):
+    try:
+        data = api.get(user, 'lists/members', slug='fllow-keepers', owner_screen_name=user.screen_name,
+                       count=5000, skip_status=True)
+    except requests.exceptions.HTTPError as e:
+        warn(user, 'fllow-keepers list not found')
+        if e.response.status_code == 404 and retry:
+            api.post(user, 'lists/create', name='fllow keepers', mode='private',
+                     description='fllow will not unfollow users in this list')
+            return get_keeper_ids(user, retry=False)
+        raise e
+
+    return {user['id'] for user in data['users']}
+
+
 def update_leaders(db, user, follower_id):
     # only update leaders if they haven't been updated recently:
     with db, db.cursor() as cursor:
@@ -155,6 +170,9 @@ def follow(db, user, leader_id):
 
 
 def run(db, user):
+    keeper_ids = get_keeper_ids(user)
+    log(user, '%d keepers', len(keeper_ids))
+
     with db, db.cursor() as cursor:
         mentors = database.get_user_mentors(cursor, user.id)
     for mentor in mentors:
@@ -193,6 +211,10 @@ def run(db, user):
 
     unfollow_ids -= unfollowed_ids  # don't unfollow if we already unfollowed
     log(user, '…of whom %d have not already been unfollowed', len(unfollow_ids))
+
+    unfollow_ids -= keeper_ids  # don't unfollow keepers
+    log(user, '…of whom %d are not keepers', len(unfollow_ids))
+
     for unfollow_id in unfollow_ids:
         unfollow(db, user, unfollow_id)
 
