@@ -186,7 +186,7 @@ def run(db, user):
         follower_ids = set(database.get_twitter_follower_ids(cursor, user.twitter_id))
         updated_time = database.get_twitter_followers_updated_time(cursor, user.twitter_id)
         unfollowed_ids = set(database.get_user_unfollow_leader_ids(cursor, user.id))
-        follows = database.get_user_follow_leader_ids(cursor, user.id)
+        follows = database.get_user_follows(cursor, user.id)
     log(user, '%d followers, updated at %s', len(follower_ids), updated_time)
     log(user, '%d currently followed', len(leader_ids))
     log(user, '%d unfollowed', len(unfollowed_ids))
