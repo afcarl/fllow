@@ -66,17 +66,19 @@ def update_outsiders(db, user, outsider_ids, retry=True):
     with db, db.cursor() as cursor:
         api_ids = database.get_twitter_api_ids(cursor, outsider_ids)
 
-    added_api_ids = api_ids - current_api_ids
+    added_api_ids = list(api_ids - current_api_ids)
     log(user, 'adding %d outsiders', len(added_api_ids))
-    api.post(user, 'lists/members/create_all', slug='fllow-outsiders',
-             owner_screen_name=user.screen_name,
-             user_id=','.join(str(api_id) for api_id in added_api_ids))
+    for i in range(0, len(added_api_ids), 100):
+        api.post(user, 'lists/members/create_all', slug='fllow-outsiders',
+                 owner_screen_name=user.screen_name,
+                 user_id=','.join(str(api_id) for api_id in added_api_ids[i:i+100]))
 
-    removed_api_ids = current_api_ids - api_ids
+    removed_api_ids = list(current_api_ids - api_ids)
     log(user, 'removing %d outsiders', len(removed_api_ids))
-    api.post(user, 'lists/members/destroy_all', slug='fllow-outsiders',
-             owner_screen_name=user.screen_name,
-             user_id=','.join(str(api_id) for api_id in removed_api_ids))
+    for i in range(0, len(removed_api_ids), 100):
+        api.post(user, 'lists/members/destroy_all', slug='fllow-outsiders',
+                 owner_screen_name=user.screen_name,
+                 user_id=','.join(str(api_id) for api_id in removed_api_ids[i:i+100]))
 
 
 def update_leaders(db, user, follower_id):
