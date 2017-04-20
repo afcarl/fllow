@@ -56,7 +56,7 @@ def update_leaders(db, user, follower_id):
         twitter = database.get_twitter(cursor, follower_id)
     log(user, 'maybe updating leaders for %s updated at %s',
         twitter.screen_name, twitter.leaders_updated_time)
-    if twitter.leaders_updated_time and now() - twitter.leaders_updated_time < UPDATE_PERIOD:
+    if twitter.leaders_updated_time and twitter.leaders_updated_time > now() - UPDATE_PERIOD:
         return log(user, 'updated too recently')
 
     start_time = now()
@@ -83,7 +83,7 @@ def update_followers(db, user, leader_id, update_period=UPDATE_PERIOD):
         twitter = database.get_twitter(cursor, leader_id)
     log(user, 'maybe updating followers for %s updated at %s',
         twitter.screen_name, twitter.followers_updated_time)
-    if twitter.followers_updated_time and now() - twitter.followers_updated_time < update_period:
+    if twitter.followers_updated_time and twitter.followers_updated_time > now() - update_period:
         return log(user, 'updated too recently')
 
     start_time = now()
@@ -118,9 +118,9 @@ def unfollow(db, user, leader_id):
         return warn(user, 'but they were never followed')
     if user_unfollow:
         return warn(user, 'but they were already unfollowed at %s', user_unfollow.time)
-    if now() - user_follow.time < UNFOLLOW_LEADERS_PERIOD:
+    if user_follow.time > now() - UNFOLLOW_LEADERS_PERIOD:
         return warn(user, 'but they were followed too recently')
-    if follower and now() - user_follow.time < UNFOLLOW_FOLLOWERS_PERIOD:
+    if follower and user_follow.time > now() - UNFOLLOW_FOLLOWERS_PERIOD:
         return warn(user, 'but they were followed too recently for someone who followed back')
 
     try:
@@ -149,7 +149,7 @@ def follow(db, user, leader_id):
         twitter.api_id, last_follow_time, follows_today)
     if user_follow:
         return warn(user, 'but they were already followed at %s', user_follow.time)
-    if last_follow_time and now() - last_follow_time < FOLLOW_PERIOD:
+    if last_follow_time and last_follow_time > now() - FOLLOW_PERIOD:
         return warn(user, 'but followed too recently')
     if follows_today >= MAX_FOLLOWS_PER_DAY:
         return warn(user, 'but too many follows today')
@@ -220,16 +220,20 @@ def run(db, user):
         unfollow(db, user, unfollow_id)
 
     with db, db.cursor() as cursor:
+        mentor_follower_ids = {id for mentor in mentors
+                               for id in database.get_twitter_follower_ids(cursor, mentor.id)}
+        # reload since we unfollowed:
         leader_ids = database.get_twitter_leader_ids(cursor, user.twitter_id)
-        followed_ids = {f.leader_id for f in follows}
-        followed_ids |= leader_ids
-        follow_ids = {id for mentor in mentors
-                      for id in database.get_twitter_follower_ids(cursor, mentor.id)
-                      if id not in followed_ids}
-        follows_today = database.get_user_follows_count(cursor, user.id, now() - DAY)
-    log(user, '%d mentor followers remaining', len(follow_ids))
+    log(user, '%d mentor followers', len(mentor_follower_ids))
+
+    follow_ids = mentor_follower_ids - leader_ids - {f.leader_id for f in follows}
+    log(user, '…of whom %d have not already been followed', len(follow_ids))
+
     max_leaders = max(int(len(follower_ids) * MAX_LEADER_RATIO), len(follower_ids) + EXTRA_LEADERS)
     log(user, '%d currently followed (max %d)', len(leader_ids), max_leaders)
+
+    day_ago = now() - DAY
+    follows_today = sum(1 for f in follows if f.time > day_ago)
     log(user, '%d already followed today (max %d)', follows_today, MAX_FOLLOWS_PER_DAY)
     remaining_follows_today = min(max_leaders - len(leader_ids),
                                   MAX_FOLLOWS_PER_DAY - follows_today)
