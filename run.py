@@ -50,6 +50,35 @@ def get_keeper_ids(db, user, retry=True):
         return database.add_twitter_api_ids(cursor, [user['id'] for user in data['users']])
 
 
+def update_outsiders(db, user, outsider_ids, retry=True):
+    try:
+        data = api.get(user, 'lists/members', slug='fllow-outsiders',
+                       owner_screen_name=user.screen_name, count=5000, skip_status=True)
+    except requests.exceptions.HTTPError as e:
+        warn(user, 'fllow-outsiders list not found')
+        if e.response.status_code == 404 and retry:
+            api.post(user, 'lists/create', name='fllow outsiders', mode='private',
+                     description="users you manually followed / fllow didn't automatically follow")
+            return update_outsiders(db, user, outsider_ids, retry=False)
+        raise e
+
+    current_api_ids = {user['id'] for user in data['users']}
+    with db, db.cursor() as cursor:
+        api_ids = database.get_twitter_api_ids(cursor, outsider_ids)
+
+    added_api_ids = api_ids - current_api_ids
+    log(user, 'adding %d outsiders', len(added_api_ids))
+    api.post(user, 'lists/members/create_all', slug='fllow-outsiders',
+             owner_screen_name=user.screen_name,
+             user_id=','.join(str(api_id) for api_id in added_api_ids))
+
+    removed_api_ids = current_api_ids - api_ids
+    log(user, 'removing %d outsiders', len(removed_api_ids))
+    api.post(user, 'lists/members/destroy_all', slug='fllow-outsiders',
+             owner_screen_name=user.screen_name,
+             user_id=','.join(str(api_id) for api_id in removed_api_ids))
+
+
 def update_leaders(db, user, follower_id):
     # only update leaders if they haven't been updated recently:
     with db, db.cursor() as cursor:
@@ -75,6 +104,7 @@ def update_leaders(db, user, follower_id):
     with db, db.cursor() as cursor:
         database.delete_old_twitter_leaders(cursor, follower_id, start_time)
         database.update_twitter_leaders_updated_time(cursor, follower_id, start_time)
+    return True
 
 
 def update_followers(db, user, leader_id, update_period=UPDATE_PERIOD):
@@ -180,7 +210,7 @@ def run(db, user):
     for mentor in mentors:
         update_followers(db, user, mentor.id)
 
-    update_leaders(db, user, user.twitter_id)
+    did_update_leaders = update_leaders(db, user, user.twitter_id)
     update_followers(db, user, user.twitter_id, update_period=USER_FOLLOWERS_UPDATE_PERIOD)
 
     with db, db.cursor() as cursor:
@@ -188,8 +218,18 @@ def run(db, user):
         follower_ids = database.get_twitter_follower_ids(cursor, user.twitter_id)
         unfollowed_ids = database.get_user_unfollow_leader_ids(cursor, user.id)
         follows = database.get_user_follows(cursor, user.id)
+    followed_ids = {f.leader_id for f in follows}
+    insider_ids = followed_ids - unfollowed_ids
+    outsider_ids = leader_ids - insider_ids
+
     log(user, '%d followers', len(follower_ids))
     log(user, '%d currently followed', len(leader_ids))
+    log(user, '…of whom %d are insiders', len(insider_ids))
+    log(user, '…and %d are outsiders', len(outsider_ids))
+
+    if did_update_leaders:
+        update_outsiders(db, user, outsider_ids)
+
     log(user, '%d unfollowed', len(unfollowed_ids))
     log(user, '%d followed', len(follows))
 
@@ -226,7 +266,7 @@ def run(db, user):
         leader_ids = database.get_twitter_leader_ids(cursor, user.twitter_id)
     log(user, '%d mentor followers', len(mentor_follower_ids))
 
-    follow_ids = mentor_follower_ids - leader_ids - {f.leader_id for f in follows}
+    follow_ids = mentor_follower_ids - followed_ids - leader_ids
     log(user, '…of whom %d have not already been followed', len(follow_ids))
 
     max_leaders = max(int(len(follower_ids) * MAX_LEADER_RATIO), len(follower_ids) + EXTRA_LEADERS)
@@ -246,6 +286,7 @@ def run(db, user):
             delay = random.uniform(1, 2) * FOLLOW_PERIOD
             log(user, 'sleeping for %s', delay)
             time.sleep(delay.total_seconds())
+
 
 def run_forever(db, user):
     try:

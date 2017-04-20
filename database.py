@@ -21,6 +21,13 @@ def get_twitter(cursor, twitter_id):
                    ' where id=%s', [twitter_id])
     return cursor.fetchone()
 
+def get_twitter_api_ids(cursor, twitter_ids):
+    if not twitter_ids:
+        return set()
+    cursor.execute('select api_id from twitters'
+                   ' where id in %s', [tuple(twitter_ids)])
+    return {row.api_id for row in cursor.fetchall()}
+
 def update_twitter_followers_updated_time(cursor, leader_id, time):
     cursor.execute('update twitters'
                    ' set followers_updated_time=%s'
