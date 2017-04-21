@@ -222,12 +222,13 @@ def run(db, user):
         follows = database.get_user_follows(cursor, user.id)
     followed_ids = {f.leader_id for f in follows}
     insider_ids = followed_ids - unfollowed_ids
+    desaparecidos = insider_ids - leader_ids
     outsider_ids = leader_ids - insider_ids
 
+    log(user, '%d desaparecidos, for example: %s', len(desaparecidos), list(desaparecidos)[:3])
     log(user, '%d followers', len(follower_ids))
     log(user, '%d currently followed', len(leader_ids))
-    log(user, '…of whom %d are insiders', len(insider_ids))
-    log(user, '…and %d are outsiders', len(outsider_ids))
+    log(user, '…of whom %d are outsiders', len(outsider_ids))
 
     if did_update_leaders:
         update_outsiders(db, user, outsider_ids)
