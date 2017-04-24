@@ -222,8 +222,8 @@ def run(db, user):
         follows = database.get_user_follows(cursor, user.id)
     followed_ids = {f.leader_id for f in follows}
     insider_ids = followed_ids - unfollowed_ids
-    desaparecidos = insider_ids - leader_ids
     outsider_ids = leader_ids - insider_ids
+    desaparecidos = insider_ids - leader_ids
 
     log(user, '%d desaparecidos, for example: %s', len(desaparecidos), list(desaparecidos)[:3])
     log(user, '%d followers', len(follower_ids))
@@ -234,20 +234,22 @@ def run(db, user):
         update_outsiders(db, user, outsider_ids)
 
     log(user, '%d unfollowed', len(unfollowed_ids))
+    log(user, '%d followed back', len(followed_ids & follower_ids))
     log(user, '%d followed', len(follows))
 
     unfollow_followers_before = now() - UNFOLLOW_FOLLOWERS_PERIOD
-    unfollow_ids = {f.leader_id for f in follows
-                    if f.time < unfollow_followers_before}
-    log(user, '…of whom %d were followed before %s', len(unfollow_ids), unfollow_followers_before)
+    unfollow_follower_ids = {f.leader_id for f in follows
+                             if f.time < unfollow_followers_before}
+    log(user, '…of whom %d were followed before %s',
+        len(unfollow_follower_ids), unfollow_followers_before)
 
     unfollow_leaders_before = now() - UNFOLLOW_LEADERS_PERIOD
     unfollow_leader_ids = {f.leader_id for f in follows
                            if f.time < unfollow_leaders_before} - follower_ids
     log(user, '…and %d were followed before %s and have not followed back',
-        len(unfollow_leader_ids - unfollow_ids), unfollow_leaders_before)
+        len(unfollow_leader_ids - unfollow_follower_ids), unfollow_leaders_before)
 
-    unfollow_ids |= unfollow_leader_ids
+    unfollow_ids = unfollow_follower_ids | unfollow_leader_ids
     log(user, '…for a total of %d follows', len(unfollow_ids))
 
     unfollow_ids &= leader_ids  # don't unfollow people we aren't following
@@ -259,6 +261,8 @@ def run(db, user):
     unfollow_ids -= keeper_ids  # don't unfollow keepers
     log(user, '…of whom %d are not keepers', len(unfollow_ids))
 
+    log(user, 'unfollowing %d leaders and %d followers',
+        len(unfollow_ids & unfollow_leader_ids), len(unfollow_ids & unfollow_follower_ids))
     for unfollow_id in unfollow_ids:
         unfollow(db, user, unfollow_id)
 
