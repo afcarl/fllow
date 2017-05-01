@@ -13,13 +13,12 @@ def main(user, path, params):
         user = database.get_user(cursor, user)
 
     all_data = []
-    data = []
-    while True:
-        max_id = min(x['id'] for x in data) - 1 if data else None
-        data = api.get(user, path, max_id=max_id, **params)
-        logging.info('got %d results', len(data))
-        if not data: break
-        all_data += data
+    cursor = -1  # cursor=-1 requests first page
+    while cursor:  # cursor=0 means no more pages
+        logging.info('loading cursor=%d', cursor)
+        data = api.get(user, path, cursor=cursor, **params)
+        cursor = data['next_cursor']
+        all_data.append(data)
 
     print(json.dumps(all_data, indent=2))
 
