@@ -50,6 +50,8 @@ def user_mentors(screen_name):
 
     with db, db.cursor() as cursor:
         user = database.get_user(cursor, screen_name)
+        if not user:
+            flask.abort(404)
 
     if flask.request.method == 'POST':
         if not logged_in:
@@ -71,6 +73,8 @@ def user_mentors(screen_name):
 def user_statistics(screen_name):
     with db, db.cursor() as cursor:
         user = database.get_user(cursor, screen_name)
+        if not user:
+            flask.abort(404)
         follow_day_counts = as_timestamps(database.get_user_follow_day_counts(cursor, user.id))
         unfollow_day_counts = as_timestamps(database.get_user_unfollow_day_counts(cursor, user.id))
         follower_day_counts = as_timestamps(database.get_twitter_follower_day_counts(cursor,
