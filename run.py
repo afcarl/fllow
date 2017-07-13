@@ -210,7 +210,12 @@ def run(db, user):
     with db, db.cursor() as cursor:
         mentors = database.get_user_mentors(cursor, user.id)
     for mentor in mentors:
-        update_followers(db, user, mentor.id)
+        try:
+            update_followers(db, user, mentor.id)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code != 404:
+                raise e
+            warn(user, 'mentor %s no longer exists', mentor.screen_name)
 
     did_update_leaders = update_leaders(db, user, user.twitter_id)
     update_followers(db, user, user.twitter_id, update_period=USER_FOLLOWERS_UPDATE_PERIOD)
