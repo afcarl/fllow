@@ -13,7 +13,7 @@
 
 Get a consumer key and secret from https://apps.twitter.com/
 
-Update `CONSUMER_KEY` in `run.py`
+Update `CONSUMER_KEY` in `api.py`
 
 Create the file `secret/__init__.py` with the contents:
 
